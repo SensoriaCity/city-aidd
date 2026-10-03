@@ -2,6 +2,9 @@
 
 Una línea por cambio de comportamiento del kit. Durante el piloto, máximo uno por semana.
 
+## city 1.0.1 · 2026-10-03
+- Host de QA y usuario de prueba: el ejemplo de city-v2 apunta a `app.city.localhost` (`CITY_BASE_DOMAIN`); `.city.json` acepta `qa.usuario` y `qa.usuario_stdin`; `build` crea un usuario desechable con contraseña aleatoria y se lo pasa al evaluador, que entra por el login de la app y nunca lo copia a la evidencia. Motivo: el evaluador no tenía cómo entrar a los pasos con sesión y la URL del ejemplo no era el host de la app. Sin entrada en `piloto/bitacora.md`: corrección de 1.0.0, no tropiezo del piloto.
+
 ## 0.2.0 · 2026-09-30
 Antes de arrancar el piloto, así que entra junto.
 - QA en navegador: agente `qa-navegador` con Playwright MCP 0.0.83 contra `city.test`, tests de navegador de Pest 4 en `build` y reporte del QA en el PR. QA humano pasa a probar la feature completa.

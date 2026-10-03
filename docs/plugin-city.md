@@ -55,7 +55,7 @@ Cada repo trae `.city.json` en la raíz; el kit no sabe nada del stack:
   "modulos": "docs/modulos.json",
   "tests": { "unit": "...", "navegador": "...", "lint": "...", "estatico": "..." },
   "tope_lineas": 400,
-  "qa": { "url": "http://app.localhost:8080", "instalar": "bin/city install --lab", "smoke": "bin/city smoke" },
+  "qa": { "url": "http://app.city.localhost:8080", "instalar": "bin/city install --lab", "smoke": "bin/city smoke" },
   "flags": "config/features.php",
   "spec_dir": "docs/specs",
   "adr_dir": "docs/adr",

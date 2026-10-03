@@ -35,11 +35,19 @@
       "description": "Instalación local limpia donde el evaluador prueba como usuario.",
       "additionalProperties": false,
       "required": ["url", "instalar", "smoke"],
+      "dependentRequired": { "usuario": ["usuario_stdin"], "usuario_stdin": ["usuario"] },
       "properties": {
-        "url": { "type": "string", "format": "uri", "description": "URL base de la app en la instalación local: localhost, 127.0.0.1, *.localhost o *.test que resuelve solo a 127.0.0.1. El evaluador la confirma con scripts/entorno-qa.py antes de tocar nada." },
+        "url": { "type": "string", "format": "uri", "description": "URL base de la app en la instalación local, con el puerto de la instalación: localhost, 127.0.0.1, *.localhost o *.test que resuelve solo a 127.0.0.1. El evaluador la confirma con scripts/entorno-qa.py antes de tocar nada." },
         "instalar": { "type": "string", "minLength": 1, "description": "Comando que levanta la instalación desde cero, con sus variables de entorno." },
         "smoke": { "type": "string", "minLength": 1, "description": "Comando que verifica la instalación antes de que el evaluador empiece." },
-        "puerto": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Puerto HTTP de la instalación, cuando difiere del de producción (Herd ocupa 80 y 443)." }
+        "puerto": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Puerto HTTP de la instalación, cuando difiere del de producción (Herd ocupa 80 y 443)." },
+        "usuario": { "type": "string", "minLength": 1, "description": "Opcional. Comando que crea el usuario de prueba en la instalación leyendo sus datos de la entrada estándar, una línea por elemento de usuario_stdin. build lo corre después de instalar y le pasa al evaluador correo y contraseña." },
+        "usuario_stdin": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "enum": ["correo", "nombre", "contraseña"] },
+          "description": "Opcional; va con usuario. Qué línea espera el comando, en orden: correo (qa+<fecha>@city.localhost), nombre (QA) o contraseña (aleatoria, de 20 caracteres). Repite un elemento si el comando pide confirmarlo."
+        }
       }
     },
     "features": {
