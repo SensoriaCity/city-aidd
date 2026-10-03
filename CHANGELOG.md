@@ -2,6 +2,9 @@
 
 Una línea por cambio de comportamiento del kit. Durante la adopción, máximo uno por semana.
 
+## city 1.1.1 · 2026-10-03
+- `revisar` sin id de funcionalidad: si la rama y el título no traen id, ya no para; delega al `revisor` con `ninguna · rama · base`. Con id `ninguna`, el revisor no lee `features` y revisa solo reglas duras, seguridad, título como Conventional Commit y dependencias; la falta de id no es hallazgo y el veredicto sale de los hallazgos. Motivo: un PR con label `city` cuya rama o título no nombran funcionalidad quedaba en `no mergear` sin revisión. Sin entrada en `bitacora.md`: corrección de 1.1.0, no tropiezo.
+
 ## city 1.1.0 · 2026-10-03
 - Un solo plugin, `city`: se borran `plugins/aidd-lite/`, `docs/qa-navegador.md` y `piloto/` (su estado queda en el tag `aidd-lite-0.2.0`); `validar.sh` valida solo `city`; `numeros.py` toma la firma (`ramas` y `label`) del `.city.json` del repo y mide el tamaño como `tamano.sh`. `docs/metodo.md` es el método de `city` (absorbe `plugin-city.md`), `docs/adopcion.md` reemplaza a `piloto.md`, y `bitacora.md` pasa a la raíz. Motivo: el piloto de AIDD Lite no empezó y `city` lo reemplaza. Sin entrada en `bitacora.md`: decisión de diseño, no tropiezo.
 - Skill `revisar` para GitHub Actions y a mano: con el número de un PR lee solo rama, base y título, deduce el id desde la rama o el título, delega al `revisor` con `id · rama · base` y deja `veredicto.md` y `veredicto.txt`; es la única skill sin `disable-model-invocation`. `docs/metodo.md` trae el workflow en "En CI". Motivo: el check `revisor` del ruleset no tenía cómo correr. Sin entrada en `bitacora.md`: parte del diseño de 1.0, no tropiezo.
