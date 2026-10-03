@@ -1,6 +1,6 @@
 ---
 name: build
-description: Construye UNA funcionalidad del archivo features de .city.json en su propia rama, con prueba primero, verificación con los comandos del repo, tamaño, regla de ADR, veredicto del subagente revisor y, si tiene UI o API, del subagente evaluador sobre una instalación limpia. Nunca escribe passes. Úsala en una sesión nueva por funcionalidad.
+description: Construye UNA funcionalidad del archivo features de .city.json en su propia rama, con prueba primero, verificación con los comandos del repo, tamaño, regla de ADR, veredicto del subagente revisor y del subagente evaluador sobre una instalación limpia. passes solo cambia con scripts/passes.sh y la evidencia del evaluador. Úsala en una sesión nueva por funcionalidad.
 argument-hint: "<id de funcionalidad> [ruta del plan del día]"
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Entrada: $ARGUMENTS
 
-Construyes una sola funcionalidad y dejas la rama lista para `/city:ship`. No te calificas: el veredicto es del `revisor` y, si aplica, del `evaluador`. `passes` lo escribe solo el evaluador.
+Construyes una sola funcionalidad y dejas la rama lista para `/city:ship`. No te calificas: el veredicto es del `revisor` y del `evaluador`. `passes` solo cambia con `scripts/passes.sh`, después de guardar la evidencia del evaluador.
 
 ## Configuración
 
@@ -17,7 +17,7 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
 
 ## Reglas duras
 
-- Nunca escribes ni cambias `passes`, ni la evidencia del evaluador.
+- Nunca cambias `passes` a mano ni editas la evidencia del evaluador: la guardas tal cual y `passes` cambia solo con `scripts/passes.sh`.
 - Nunca borras, reordenas ni editas el texto de una funcionalidad en `features`, tampoco para que pase.
 - Nunca lees, imprimes ni tocas `.env`.
 - Nunca desactivas, saltas ni borras una prueba, ni bajas un umbral para que pase.
@@ -51,15 +51,17 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
 8. **ADR, por regla y no por criterio.** Hace falta si el diff toca `adr_dir` o un contrato compartido: un archivo de `codeowners_paths`, o una interfaz, esquema o API que otro módulo o app usa (búscalo con grep), o lo que el `CLAUDE.md` del repo exige con ADR. Está cubierto si el ADR viene en el diff o ya está en `origin/main` (`git cat-file -e origin/main:<ruta>`). Si falta, detente: un ADR imprevisto parte la entrega. Propón una primera con solo el contrato, el ADR y sus pruebas.
 
 9. **Revisor.** Delega al subagente `city:revisor` con una sola línea, sin tu resumen:
-   `id: <id> · rama: <rama> · base: origin/main`
-   No edites mientras corre. Corrige los hallazgos altos, haz commit y pide otra vuelta: máximo 2. Los medios y bajos no bloquean; guárdalos para el PR. Si tras 2 vueltas sigue en rojo, no insistas: el PR nace bloqueado y lo decide una persona.
-   Si el diff toca autenticación, permisos, archivos, integraciones o el CLI, delega también al subagente `city:seguridad` con la misma línea y las mismas reglas.
+   `<id> · <rama> · origin/main`
+   No edites mientras corre. Corrige los hallazgos `bloquea`, haz commit y pide otra vuelta: máximo 2. Los `debería` y `sugerencia` no bloquean; guárdalos para el PR. Si tras 2 vueltas sigue en `Veredicto: no mergear`, no insistas: el PR nace bloqueado y lo decide una persona.
+   Si el diff toca autenticación, permisos, archivos, integraciones o el CLI, delega también al subagente `city:seguridad` con la misma línea y, debajo, uno por línea, los archivos de `git diff --name-only origin/main...HEAD` que tocan esa superficie. Mismas reglas y vueltas.
 
-10. **Evaluador,** solo si la funcionalidad tiene UI o API: sus pasos hablan de pantalla, navegador, endpoint o respuesta HTTP, o el diff toca rutas, controladores, vistas o frontend.
+10. **Evaluador,** siempre: su evidencia es el único camino a `passes`.
     - Antes, ver `docs/harness/entorno.md` del repo. Si hay una instalación que no creó esta sesión, no la bajes ni borres datos: di qué encontraste y espera el sí de la persona.
     - Instalación limpia: corre `qa.instalar` y luego `qa.smoke`, literales y con timeout amplio. Si falla algo de la máquina (Docker apagado, puerto ocupado), dilo y detente; si falla por el código, arréglalo antes de seguir.
     - Delega al subagente `city:evaluador` con una sola línea: `<id> · <qa.url>`.
-    - Él escribe `passes` y `<evidencia_dir>/<id>.md`. Tú no los editas: si los dejó, comitéalos tal cual.
+    - Si responde `BLOQUEADO: …`, no guardes nada: dilo y detente.
+    - Si no, guarda su respuesta tal cual, sin agregar ni quitar una línea, en `<evidencia_dir>/<id>.md` (crea la carpeta si falta).
+    - Si su última línea es `VEREDICTO: pasa`, corre `bash "${CLAUDE_PLUGIN_ROOT}/scripts/passes.sh" <id>`. Si sale con 1, detente y pega su mensaje. Comitea la evidencia y el cambio de `features` juntos (`test(<ámbito>): evidencia de <id>`); con `no pasa`, comitea solo la evidencia.
     - Si no pasa, corrige, haz commit y pide otra pasada: máximo 2. Si las correcciones cambian más que unas líneas, pide también otra vuelta al revisor.
     - Al terminar, baja la instalación de esta sesión como dice `docs/harness/entorno.md` del repo.
 
@@ -69,5 +71,5 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
     3. Pruebas: comandos en verde, en rojo o ausentes del repo.
     4. Tamaño: `<n>` de `<tope_lineas>`.
     5. ADR: no aplica, cubierto (`<ruta>`) o falta.
-    6. Revisor y evaluador: veredicto, vueltas y pendientes medios.
+    6. Revisor, seguridad y evaluador: veredicto, vueltas y pendientes `debería`.
     7. Siguiente paso: `/city:ship` en esta sesión.

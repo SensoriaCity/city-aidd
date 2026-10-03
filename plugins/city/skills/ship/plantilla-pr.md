@@ -15,9 +15,10 @@
 - <qué y por qué, una línea cada una; o "ninguna">
 
 ## Veredictos
-- Revisor (`city:revisor`): <APROBADO o CAMBIOS REQUERIDOS> en <n> vuelta(s), sobre <sha corto>.
-- Evaluador (`city:evaluador`): <pasa, no pasa o "sin UI ni API: no aplica"> en <n> vuelta(s), sobre <url local>. Evidencia: `<evidencia_dir>/<id>.md`.
-- Pendientes medios y bajos: <lista, o "ninguno">
+- Revisor (`city:revisor`): <listo para merge o no mergear> en <n> vuelta(s), sobre <sha corto>.
+- Seguridad (`city:seguridad`): <listo para merge, no mergear o "el diff no toca su superficie">.
+- Evaluador (`city:evaluador`): <pasa o no pasa> en <n> vuelta(s), sobre <url local>. Evidencia: `<evidencia_dir>/<id>.md`.
+- Pendientes `debería` y `sugerencia`, y hallazgos medios y bajos del evaluador: <lista, o "ninguno">
 
 ## Evidencia
 ```

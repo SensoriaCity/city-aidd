@@ -36,7 +36,7 @@
       "additionalProperties": false,
       "required": ["url", "instalar", "smoke"],
       "properties": {
-        "url": { "type": "string", "format": "uri", "description": "URL base de la app en la instalación local. entorno-qa.php la confirma local antes de tocar la base." },
+        "url": { "type": "string", "format": "uri", "description": "URL base de la app en la instalación local: localhost, 127.0.0.1, *.localhost o *.test que resuelve solo a 127.0.0.1. El evaluador la confirma con scripts/entorno-qa.py antes de tocar nada." },
         "instalar": { "type": "string", "minLength": 1, "description": "Comando que levanta la instalación desde cero, con sus variables de entorno." },
         "smoke": { "type": "string", "minLength": 1, "description": "Comando que verifica la instalación antes de que el evaluador empiece." },
         "puerto": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Puerto HTTP de la instalación, cuando difiere del de producción (Herd ocupa 80 y 443)." }
@@ -45,7 +45,7 @@
     "features": {
       "type": "string",
       "minLength": 1,
-      "description": "Ruta al archivo de funcionalidades con pasos verificables y passes. Solo el evaluador escribe passes."
+      "description": "Ruta al archivo de funcionalidades con pasos verificables y passes. passes solo cambia con scripts/passes.sh, que exige la evidencia del evaluador con VEREDICTO: pasa."
     },
     "evidencia_dir": {
       "type": "string",
@@ -73,6 +73,16 @@
       "uniqueItems": true,
       "items": { "type": "string", "minLength": 1 },
       "description": "Patrones de CODEOWNERS que retienen el PR para lectura humana. ship avisa cuando el diff toca uno; /city:goal para si hay más de tres PR retenidos."
+    },
+    "revisor_extra": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opcional. Archivo del repo con los chequeos propios del stack que el agente revisor aplica después de los generales, con la severidad que el archivo les dé."
+    },
+    "seguridad_checklist": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opcional. Checklist de seguridad del repo. El agente seguridad lo recorre sobre los archivos del diff y el revisor lo usa en su paso de seguridad; sin él, ambos usan sus categorías."
     }
   },
   "$defs": {

@@ -2,7 +2,7 @@
   "name": "city",
   "displayName": "City",
   "version": "1.0.0",
-  "description": "Flujo de desarrollo con agentes para city y city-v2: spec de una página, cortes de ≤400 líneas, evaluador independiente que escribe passes, auto-merge por checks y bucle por objetivo. Cada repo lo configura con .city.json.",
+  "description": "Flujo de desarrollo con agentes para city y city-v2: spec de una página, cortes de ≤400 líneas, evaluador independiente cuya evidencia es el único camino a passes, auto-merge por checks y bucle por objetivo. Cada repo lo configura con .city.json.",
   "author": {
     "name": "Sensoria City",
     "email": "belmar@sensoria.city"

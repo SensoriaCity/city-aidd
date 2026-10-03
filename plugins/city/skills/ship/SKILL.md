@@ -19,8 +19,8 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
 2. **Árbol limpio y al día.** `git status --porcelain` vacío, `git fetch origin` y `git merge-base --is-ancestor origin/main HEAD`. Si no está al día: `git rebase origin/main` si la rama aún no está en `origin`, o `git merge origin/main` si ya está (nunca `push --force`). Con conflictos, detente. Después, vuelve a correr las pruebas.
 3. **Tamaño:** `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tamano.sh"`. Si sale con 1, detente y propón cómo partir.
 4. **Pruebas en verde ahora mismo.** Corre otra vez, literales, los comandos de `tests` que aplican al corte, con la regla de `/city:build`: un comando que no existe en el repo se anota y no se reemplaza. Guarda el final de cada salida para el PR.
-5. **Veredictos vigentes** del subagente `city:revisor`; del `city:seguridad`, si el diff toca su superficie; y del `city:evaluador`, si la funcionalidad tiene UI o API. Vigente es sin commits con cambios de código después de él; un rebase o merge de `origin/main` sin conflictos no lo invalida. Si falta uno (hubo `/clear`, es otra sesión o hubo cambios después), repítelo ahora como en los pasos 9 y 10 de `/city:build`, con sus 2 vueltas.
-6. **passes con evidencia.** `git diff origin/main...HEAD -- <features>`. Si una funcionalidad pasa a `"passes": true`, debe ser la de esta rama y debe existir en la rama `<evidencia_dir>/<id>.md` con la línea `VEREDICTO: pasa` (`grep -qx 'VEREDICTO: pasa'`). Si no, detente: solo el evaluador lo cambia, y con evidencia.
+5. **Veredictos vigentes** del subagente `city:revisor`; del `city:seguridad`, si el diff toca su superficie; y del `city:evaluador`. Vigente es sin commits con cambios de código después de él; un rebase o merge de `origin/main` sin conflictos no lo invalida. Si falta uno (hubo `/clear`, es otra sesión o hubo cambios después), repítelo ahora como en los pasos 9 y 10 de `/city:build`, con sus 2 vueltas.
+6. **passes con evidencia.** `git diff origin/main...HEAD -- <features>`. Si una funcionalidad pasa a `"passes": true`, debe ser la de esta rama y debe existir en la rama `<evidencia_dir>/<id>.md` con el encabezado `# Evidencia · <id> · …` y la última línea `VEREDICTO: pasa`, lo mismo que exige `scripts/passes.sh`. Si no, detente: `passes` solo cambia con la evidencia del evaluador.
 7. **ADR.** La regla del paso 8 de `/city:build`. Si falta, detente y vuelve a `/city:build`.
 
 ## Abrir el PR
@@ -29,7 +29,7 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
 2. **Cuerpo.** Usa `.github/PULL_REQUEST_TEMPLATE.md` del repo si existe; si no, `${CLAUDE_SKILL_DIR}/plantilla-pr.md`. Llénalo en un archivo temporal fuera del repo, con datos reales; borra lo que no aplique y no dejes comentarios de la plantilla sin responder. Si la plantilla no las trae, agrega al final:
    - "Decisiones del ejecutor": las que tomó `/city:build`, qué y por qué, o "ninguna".
    - "Evidencia": el final de la salida del chequeo 4 y del tamaño.
-   - "Veredictos": revisor y evaluador, vueltas y pendientes medios y bajos.
+   - "Veredictos": revisor, seguridad y evaluador, vueltas y pendientes `debería` y `sugerencia`.
    Si alguno quedó en rojo tras 2 vueltas, la primera línea del cuerpo es `**Bloqueado:** <quién y motivo>`.
 3. **Título:** Conventional Commit en español, `feat(<ámbito>): <qué cambia>`. Si el repo versiona por título del PR, el tipo define la versión.
 4. `gh pr create --base main --label <label> --title "<título>" --body-file <archivo>`. Si el label no existe, dilo; créalo solo si la persona lo confirma.

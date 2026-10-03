@@ -52,5 +52,7 @@
     "web/packages/*/package.json",
     "web/apps/*/package.json",
     ".city.json"
-  ]
+  ],
+  "revisor_extra": "docs/harness/revisor.md",
+  "seguridad_checklist": "docs/seguridad/checklist.md"
 }
