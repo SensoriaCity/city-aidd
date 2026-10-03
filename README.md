@@ -1,64 +1,65 @@
-# aidd-lite
+# city-aidd
 
-Kit para probar en `city` una forma liviana de desarrollar con Claude Code, al lado de BMAD y sin tocarlo. Es un plugin de Claude Code más un plan de piloto medido con `aidd-metrics`.
+El plugin `city` de Claude Code: el flujo de desarrollo con agentes de Sensoria para `city` y `city-v2`. Cada repo le dice al kit cómo es su stack con un `.city.json` en la raíz.
 
 ## Qué trae
 
 | Skill o agente | Quién lo usa | Qué hace |
 |---|---|---|
-| `/aidd-lite:spec` | Cualquiera | Entrevista y spec de una página con criterios verificables y cortes de ≤400 líneas; decide si hace falta ADR y la publica en la rama del corte 1 |
-| `/aidd-lite:build` | Cualquiera | Implementa un corte con tests primero (también de navegador), hace commit, controla tamaño y ADR, y pasa por el revisor y por el QA en navegador |
-| `/aidd-lite:ship` | Cualquiera | Abre el PR a `main` con label `aidd-lite`, la plantilla, el reporte del QA y otra persona asignada para revisarlo |
-| `aidd-lite:revisor` | Lo invocan build y ship | Revisor escéptico en contexto limpio; bloquea solo por hallazgos altos |
-| `aidd-lite:qa-navegador` | Lo invocan build y ship en cortes con UI | Prueba el corte en `city.test` con Playwright como lo haría un usuario y deja evidencia para el PR |
+| `/city:build` | Cualquiera | Construye una funcionalidad en su rama: prueba primero, tamaño, ADR, revisor y evaluador sobre una instalación limpia. `passes` cambia solo con la evidencia del evaluador |
+| `/city:ship` | Cualquiera | Abre el PR con la plantilla del repo y el label, y lo deja en auto-merge por squash |
+| `/city:check` | Quien libera | Reporte de cierre de solo lectura: mergeados, `passes` con evidencia, retenidos, PR en rojo, ADR y qué clickear |
+| `city:revisor` | `build`, `ship` y CI | Lee el diff en contexto limpio; termina en "listo para merge" o "no mergear" |
+| `city:seguridad` | `build` | Audita los archivos del diff que tocan autenticación, permisos, archivos, integraciones o el CLI |
+| `city:evaluador` | `build` | Prueba la funcionalidad como usuario con Playwright, curl y bash; su evidencia es el único camino a `passes` |
 
 ## Empezar
 
 1. Leer `docs/metodo.md`.
-2. Seguir la semana 0 de `docs/piloto.md`.
+2. Seguir la preparación de `docs/adopcion.md` en el repo que adopta.
 3. En `aidd-metrics`, aplicar `docs/integracion-aidd-metrics.md`.
-4. Para el QA en navegador, seguir `docs/qa-navegador.md`: un PR de setup en `city` y una configuración por dev.
 
-Instalación para un dev del piloto, desde su clon de `city`:
+Instalación para todo un repo, desde su clon:
 
 ```bash
-claude plugin marketplace add SensoriaCity/city-aidd
-claude plugin install aidd-lite@sensoria --scope local
+claude plugin marketplace add SensoriaCity/city-aidd --scope project
+claude plugin install city@sensoria --scope project
 ```
 
-Para probarlo antes de publicar el repo, con la ruta local:
+Para probar un cambio del kit sin instalarlo, desde el clon del repo:
 
 ```bash
-claude plugin marketplace add ~/Projects/city-aidd
-claude plugin install aidd-lite@sensoria --scope local
+claude --plugin-dir ~/Projects/city-aidd/plugins/city
 ```
 
 ## Estructura
 
 ```
-.claude-plugin/marketplace.json     marketplace "sensoria" con un plugin
-plugins/aidd-lite/
+.claude-plugin/marketplace.json     marketplace "sensoria" con el plugin city
+plugins/city/
   .claude-plugin/plugin.json        versión del kit
-  .mcp.json                         servidor de Playwright, con versión fija, para el agente QA
-  skills/spec/                      SKILL.md + plantilla-spec.md + plantilla-adr.md
+  .mcp.json                         servidor de Playwright, con versión fija, para el evaluador
+  city.schema.json                  contrato de .city.json
   skills/build/                     SKILL.md
   skills/ship/                      SKILL.md + plantilla-pr.md
-  agents/revisor.md                 subagente revisor
-  agents/qa-navegador.md            subagente de QA en navegador
-  scripts/necesita-adr.php          regla que decide si un cambio necesita ADR
-  scripts/entorno-qa.php            confirma que la app que prueba el agente QA es local
+  skills/check/                     SKILL.md + plantilla-cierre.md
+  agents/                           revisor.md, seguridad.md y evaluador.md, sin edición
+  hooks/hooks.json                  dependency-guard antes de Bash y de cada edición
+  scripts/                          tamano.sh, passes.sh, entorno-qa.py y dependency-guard.sh
 docs/
-  metodo.md                         el método: ciclo, roles, reglas y decisiones
+  metodo.md                         el método: ciclo, reglas, agentes, capas y control humano
+  adopcion.md                       city-v2 primero, luego una squad de city por semana
   fundamentos.md                    DORA y Anthropic detrás de cada regla
-  coexistencia-bmad.md              qué no se toca y cómo no contaminar la comparación
-  piloto.md                         semana 0, rituales, criterios de decisión y retro
-  integracion-aidd-metrics.md       firma liviano y evento del piloto
-  qa-navegador.md                   setup en city, configuración por dev y límites del QA en navegador
-piloto/bitacora.md                  registro semanal de las squads
-scripts/numeros.py                  números del piloto desde GitHub, sin esperar al dashboard
+  coexistencia-bmad.md              qué no se toca en city mientras haya squads en BMAD
+  integracion-aidd-metrics.md       firma del flujo y eventos de adopción
+  ejemplos/city-v2.city.json        el .city.json de city-v2
+bitacora.md                         registro semanal de cada repo o squad
+scripts/numeros.py                  números semanales desde GitHub, sin esperar al dashboard
 scripts/validar.sh                  valida el kit antes de publicar un cambio
-CHANGELOG.md                        un cambio por semana durante el piloto
+CHANGELOG.md                        un cambio de comportamiento por semana
 ```
+
+El estado final de AIDD Lite, cuyo piloto no llegó a empezar, quedó en el tag `aidd-lite-0.2.0`.
 
 ## Mantener el kit
 

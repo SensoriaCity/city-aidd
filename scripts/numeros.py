@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""Números del piloto AIDD Lite directo desde GitHub, sin esperar al dashboard de aidd-metrics.
+"""Números semanales del flujo city directo desde GitHub, sin esperar al dashboard de aidd-metrics.
 
-Uso (desde cualquier carpeta, con gh autenticado):
+Uso (desde la raíz del repo medido, con gh autenticado):
 
   gh pr list --repo SensoriaCity/city --state merged --limit 1000 \
     --search "merged:>=2026-10-06" \
     --json number,title,author,headRefName,baseRefName,labels,createdAt,mergedAt,additions,deletions,changedFiles,files,reviews,commits \
-    | python3 scripts/numeros.py [--autores usuario1,usuario2]
+    | python3 ~/Projects/city-aidd/scripts/numeros.py [--config .city.json] [--autores usuario1,usuario2]
 
-Clasifica cada PR con una versión simplificada del ADR-008 de aidd-metrics
-(hotfix > experimento > proceso > bmad > liviano > clasico) y reporta, por flujo, solo PRs mergeados a main:
-  n · tamaño p50/p85 (inserciones + borrados, sin lockfiles, vendor, public/build, specs de docs/apps/*/lite ni ADRs de docs/adrs)
+La firma del flujo sale del .city.json del repo: un PR es `liviano` (el flujo city en el ADR-008) si su rama
+empieza por `ramas` o si tiene el `label`. Clasifica cada PR con una versión simplificada del ADR-008 de
+aidd-metrics (hotfix > experimento > proceso > bmad > liviano > clasico) y reporta, por flujo, solo PRs
+mergeados a main:
+  n · tamaño p50/p85 (inserciones + borrados, sin lockfiles, vendor ni evidencia_dir, como scripts/tamano.sh)
   · lead time p50/p85 (primer commit → merge, en horas) · % sin revisión humana
   · primera revisión humana p50 (horas desde la apertura)
   · % de aprobaciones rápidas: PRs de 50 líneas o más cuya primera aprobación humana llegó sin comentarios
@@ -25,6 +27,7 @@ Son cifras de control semanal. La comparación oficial la hace aidd-metrics con 
 """
 import argparse
 import json
+import os
 import re
 import sys
 from datetime import datetime
@@ -32,7 +35,7 @@ from datetime import datetime
 MIN_N = 5  # min_sample_size de aidd-metrics
 LINEAS_POR_HORA = 500
 TAM_MIN_RAPIDA = 50
-EXCLUIR = re.compile(r"(^|/)(composer\.lock|package-lock\.json|yarn\.lock)$|^vendor/|^public/build/|^docs/apps/[^/]+/lite/|^docs/adrs?/")
+LOCKFILES = re.compile(r"(^|/)(composer\.lock|package-lock\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb)$|(^|/)vendor/")
 PROCESO = ("_bmad/", ".claude/", "docs/", ".github/")
 BMAD_RAMA = re.compile(r"^(hito|tarea)/.*-H\d+")
 BMAD_TITULO = re.compile(r"(?i)\b(story|historia)\s+\d+\.\d+")
@@ -49,7 +52,17 @@ def es_bot(login):
     return login.endswith("[bot]") or login in BOTS
 
 
-def flujo(pr):
+def firma(ruta):
+    if not os.path.isfile(ruta):
+        sys.exit(f"numeros: no encuentro {ruta}; corre desde la raíz del repo medido o pasa --config")
+    cfg = json.load(open(ruta))
+    if not cfg.get("ramas") or not cfg.get("label"):
+        sys.exit(f"numeros: {ruta} no tiene ramas y label")
+    evidencia = (cfg.get("evidencia_dir") or "").rstrip("/")
+    return cfg["ramas"], cfg["label"], (evidencia + "/") if evidencia else None
+
+
+def flujo(pr, ramas, label):
     rama = pr.get("headRefName", "")
     rutas = [f["path"] for f in pr.get("files") or []]
     labels = {lab["name"] for lab in pr.get("labels") or []}
@@ -62,7 +75,7 @@ def flujo(pr):
     if (BMAD_RAMA.match(rama) or rama.startswith("hito/") or BMAD_TITULO.search(pr.get("title", ""))
             or any(BMAD_DOCS.match(r) for r in rutas)):
         return "bmad"
-    if rama.startswith("lite/") or "aidd-lite" in labels:
+    if rama.startswith(ramas) or label in labels:
         return "liviano"
     return "clasico"
 
@@ -91,11 +104,12 @@ def revisiones_humanas(pr):
                   key=lambda r: r["submittedAt"])
 
 
-def tamano(pr):
+def tamano(pr, evidencia):
     archivos = pr.get("files") or []
     if pr.get("changedFiles") and pr["changedFiles"] > len(archivos):
         return (pr.get("additions") or 0) + (pr.get("deletions") or 0), True
-    return sum(f["additions"] + f["deletions"] for f in archivos if not EXCLUIR.search(f["path"])), False
+    return sum(f["additions"] + f["deletions"] for f in archivos
+               if not LOCKFILES.search(f["path"]) and not (evidencia and f["path"].startswith(evidencia))), False
 
 
 def aprobacion_rapida(pr, tam):
@@ -115,9 +129,12 @@ def aprobacion_rapida(pr, tam):
 
 
 def main():
-    args = argparse.ArgumentParser(description="Números del piloto AIDD Lite desde gh pr list --json.")
-    args.add_argument("--autores", default="", help="logins separados por coma; filtra por autor del PR")
-    autores = {a.strip().lower() for a in args.parse_args().autores.split(",") if a.strip()}
+    parser = argparse.ArgumentParser(description="Números del flujo city desde gh pr list --json.")
+    parser.add_argument("--config", default=".city.json", help="ruta al .city.json del repo medido")
+    parser.add_argument("--autores", default="", help="logins separados por coma; filtra por autor del PR")
+    args = parser.parse_args()
+    ramas, label, evidencia = firma(args.config)
+    autores = {a.strip().lower() for a in args.autores.split(",") if a.strip()}
     prs = json.load(sys.stdin)
     grupos = {}
     truncados = 0
@@ -126,10 +143,10 @@ def main():
             continue
         if autores and autor(pr) not in autores:
             continue
-        g = grupos.setdefault(flujo(pr), {"tam": [], "lead": [], "sin_rev": 0, "rev1": [], "n": 0,
+        g = grupos.setdefault(flujo(pr, ramas, label), {"tam": [], "lead": [], "sin_rev": 0, "rev1": [], "n": 0,
                                            "rapidas": 0, "con_aprob": 0})
         g["n"] += 1
-        tam, truncado = tamano(pr)
+        tam, truncado = tamano(pr, evidencia)
         truncados += int(truncado)
         g["tam"].append(tam)
         rapida = aprobacion_rapida(pr, tam)

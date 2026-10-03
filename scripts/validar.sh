@@ -3,23 +3,19 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-PLUGIN=plugins/aidd-lite   # checks propios de aidd-lite
 CITY=plugins/city
-PLUGINS="$PLUGIN $CITY"
 fail=0
 err() { echo "  ✗ $1"; fail=1; }
 
-echo "1/11 claude plugin validate --strict (marketplace)"
+echo "1/9 claude plugin validate --strict (marketplace)"
 claude plugin validate --strict . || fail=1
 
-echo "2/11 claude plugin validate --strict (plugins y skills)"
-for P in $PLUGINS; do
-  claude plugin validate --strict "$P" || fail=1
-  claude plugin validate --strict "$P/skills" || fail=1
-done
+echo "2/9 claude plugin validate --strict (plugin y skills)"
+claude plugin validate --strict "$CITY" || fail=1
+claude plugin validate --strict "$CITY/skills" || fail=1
 
-echo "3/11 frontmatter y tamaño de skills y agentes"
-for f in plugins/*/skills/*/SKILL.md plugins/*/agents/*.md; do
+echo "3/9 frontmatter y tamaño de skills y agentes"
+for f in "$CITY"/skills/*/SKILL.md "$CITY"/agents/*.md; do
   [ -f "$f" ] || continue
   [ "$(head -1 "$f")" = "---" ] || err "sin frontmatter: $f"
   grep -q '^name: ' "$f" || err "sin name: $f"
@@ -27,11 +23,11 @@ for f in plugins/*/skills/*/SKILL.md plugins/*/agents/*.md; do
   n=$(wc -l < "$f" | tr -d ' ')
   [ "$n" -le 120 ] || err "más de 120 líneas ($n): $f"
 done
-for f in plugins/*/skills/*/SKILL.md; do
+for f in "$CITY"/skills/*/SKILL.md; do
   grep -q '^disable-model-invocation: true' "$f" || err "falta disable-model-invocation: true en $f"
   grep -q '^argument-hint: ' "$f" || err "falta argument-hint en $f"
 done
-for f in plugins/*/agents/*.md; do
+for f in "$CITY"/agents/*.md; do
   [ -f "$f" ] || continue
   grep -qE '^tools: ' "$f" || err "sin lista de tools (heredaría las de edición): $f"
   if grep -E '^tools:' "$f" | grep -qE 'Edit|Write|MultiEdit|NotebookEdit'; then
@@ -42,29 +38,23 @@ for f in "$CITY"/agents/*.md; do
   grep -qx 'model: inherit' "$f" || err "falta model: inherit en $f"
 done
 
-echo "4/11 aidd-lite: el comando de tamaño es idéntico en build, ship y revisor"
-n=$(grep -h 'diff --shortstat origin/main...HEAD' "$PLUGIN/skills/build/SKILL.md" "$PLUGIN/skills/ship/SKILL.md" "$PLUGIN/agents/revisor.md" \
-  | sed 's/^[[:space:]]*//' | sort -u | wc -l | tr -d ' ')
-[ "$n" -eq 1 ] || err "el comando de tamaño difiere entre build, ship y revisor ($n variantes)"
-
-echo "5/11 archivos referenciados con \${CLAUDE_SKILL_DIR} y \${CLAUDE_PLUGIN_ROOT}"
-for f in plugins/*/skills/*/SKILL.md; do
+echo "4/9 archivos referenciados con \${CLAUDE_SKILL_DIR} y \${CLAUDE_PLUGIN_ROOT}"
+for f in "$CITY"/skills/*/SKILL.md; do
   d=$(dirname "$f")
   for ref in $(grep -oE '\$\{CLAUDE_SKILL_DIR\}/[A-Za-z0-9._/-]+' "$f" | sed 's|^\${CLAUDE_SKILL_DIR}/||' | sort -u); do
     [ -f "$d/$ref" ] || err "no existe $d/$ref (referenciado en $f)"
   done
 done
-for f in plugins/*/skills/*/SKILL.md plugins/*/agents/*.md; do
+for f in "$CITY"/skills/*/SKILL.md "$CITY"/agents/*.md; do
   [ -f "$f" ] || continue
-  P=$(echo "$f" | cut -d/ -f1-2)
+  P=$CITY
   for ref in $(grep -oE '\$\{CLAUDE_PLUGIN_ROOT\}/[A-Za-z0-9._/-]+' "$f" | sed 's|^\${CLAUDE_PLUGIN_ROOT}/||' | sort -u); do
     [ -f "$P/$ref" ] || err "no existe $P/$ref (referenciado en $f)"
   done
 done
 
-echo "6/11 .mcp.json de cada plugin y herramientas de su agente de navegador"
-for par in "$PLUGIN:qa-navegador" "$CITY:evaluador"; do
-python3 - "${par%%:*}" "${par#*:}" <<'PY' || fail=1
+echo "5/9 .mcp.json y herramientas del evaluador"
+python3 - "$CITY" evaluador <<'PY' || fail=1
 import json, re, sys
 plugin, agente = sys.argv[1], sys.argv[2]
 cfg = json.load(open(f"{plugin}/.mcp.json"))["mcpServers"]
@@ -113,31 +103,12 @@ for t in tools:
         mal(f"{agente} no debe tener {t}")
 sys.exit(0 if ok else 1)
 PY
-done
 
-echo "7/11 aidd-lite: la regla de ADR responde bien a nueve casos"
-if command -v php >/dev/null 2>&1; then
-  R="$PLUGIN/scripts/necesita-adr.php"
-  php -l "$R" >/dev/null || err "necesita-adr.php no compila"
-  [ "$(php "$R" app/Shared/Payments/X.php | head -1)" = "ADR: requerido" ] || err "Shared debería pedir ADR"
-  [ "$(php "$R" app/Filament/Pqrs/A.php app/Filament/PhotoTicket/B.php | head -1)" = "ADR: requerido" ] || err "dos módulos deberían pedir ADR"
-  [ "$(php "$R" app/Filament/Pqrs/A.php tests/Feature/App/Filament/Pqrs/ATest.php | head -1)" = "ADR: no requerido" ] || err "un solo módulo no debería pedir ADR"
-  [ "$(php "$R" config/app.php | head -1)" = "ADR: a criterio" ] || err "código fuera de módulos debería quedar a criterio"
-  [ "$(php "$R" database/migrations/2026_09_25_090100_tools__fill_span.php app/Filament/Tools/A.php | head -1)" = "ADR: no requerido" ] || err "una migración con dominio en el nombre debería ser de ese módulo"
-  [ "$(php "$R" database/migrations/2026_09_01_000001_add_origin_to_resolutions_table.php app/Filament/Pqrs/A.php | head -1)" = "ADR: a criterio" ] || err "una migración sin dominio en el nombre debería quedar a criterio"
-  [ "$(php "$R" app/Filament/Zer/X.php database/factories/XFactory.php lang/es/zer.php | head -1)" = "ADR: no requerido" ] || err "factories y lang deberían heredar el módulo"
-  [ "$(php "$R" app/Filament/Mobility/X.php tests/Browser/Contraventional/XTest.php | head -1)" = "ADR: no requerido" ] || err "los tests no deberían sumar módulos"
-  [ "$(php "$R" app/Filament/Zer/X.php lang/es/pqrs.php | head -1)" = "ADR: requerido" ] || err "un archivo de lang de otro módulo debería contar como ese módulo"
-  php -l "$PLUGIN/scripts/entorno-qa.php" >/dev/null || err "entorno-qa.php no compila"
-else
-  echo "  (sin php en esta máquina: se salta)"
-fi
+echo "6/9 versión del plugin registrada en CHANGELOG.md"
+v=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$CITY/.claude-plugin/plugin.json")
+grep -q "^## city $v " CHANGELOG.md || err "CHANGELOG.md no tiene entrada para city $v"
 
-echo "8/11 aidd-lite: versión del plugin registrada en CHANGELOG.md"
-v=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$PLUGIN/.claude-plugin/plugin.json")
-grep -q "^## $v " CHANGELOG.md || err "CHANGELOG.md no tiene entrada para $v"
-
-echo "9/11 city: el kit no sabe nada del stack"
+echo "7/9 el kit no sabe nada del stack"
 for f in "$CITY"/skills/*/SKILL.md "$CITY"/agents/*.md; do
   grep -q '\.city\.json' "$f" || err "no lee .city.json: $f"
 done
@@ -149,7 +120,7 @@ for f in "$CITY/skills/build/SKILL.md" "$CITY/skills/ship/SKILL.md"; do
 done
 python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$CITY/city.schema.json" || err "city.schema.json no es JSON"
 
-echo "10/11 city: tamano.sh, passes.sh y entorno-qa.py en un repo de prueba"
+echo "8/9 tamano.sh, passes.sh y entorno-qa.py en un repo de prueba"
 T="$(pwd)/$CITY/scripts/tamano.sh"
 bash -n "$T" || err "tamano.sh no compila"
 tmp=$(mktemp -d)
@@ -227,7 +198,7 @@ for ips in 10.0.0.5 127.0.0.1,10.0.0.5 127.0.0.1,::1 ''; do
 done
 python3 "$E" http://city.example >/dev/null && err "entorno-qa debería bloquear un dominio que no es .test"
 
-echo "11/11 city: prueba del hook de dependencias en bash 3.2 y bash 5"
+echo "9/9 prueba del hook de dependencias en bash 3.2 y bash 5"
 # El test llama al hook con `bash`: un enlace al frente del PATH hace que test y
 # hook corran con el mismo bash.
 G="$(pwd)/$CITY/scripts/dependency-guard.test.sh"

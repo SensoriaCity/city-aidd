@@ -1,0 +1,89 @@
+# Adopción de city
+
+No hay piloto comparativo: el método se adopta app por app. Primero `city-v2`, donde nace el kit, y después `city`, una squad por semana. Mientras una squad de `city` no adopta, sigue en BMAD sin cambios (ver `coexistencia-bmad.md`). La decisión de volverlo el flujo por defecto de todo `city` necesita 12 semanas de datos, que es la ventana de curva J que usa `aidd-metrics`.
+
+- **Inicio (semana 1):** `<AAAA-MM-DD>`
+- **Versión del kit al arrancar:** 1.1.0
+
+## Calendario
+
+| Semana | Repo y squad | Qué |
+|---|---|---|
+| 1 | `city-v2` | `.city.json`, ruleset, CODEOWNERS, job `revisor` de CI y sandbox con `deny`. Todo trabajo nuevo entra por `/city:build` y `/city:ship`. |
+| 2 | `city-v2` | Primera retro con números. `/city:check` al cerrar cada hito. |
+| 3 | `city`, squad 1 | `.city.json` de `city` (Filament), `docs/harness/entorno.md` y la preparación de abajo. Kickoff de 45 minutos. |
+| 4 en adelante | `city`, una squad más por semana | La squad entra si la anterior cumple los guardarraíles de su última semana. Un cambio al kit por semana. |
+
+## Cómo elegir la siguiente squad de `city`
+
+- Una squad que quiera hacerlo. Sin eso se mide resistencia, no el método.
+- Sin un hito BMAD grande a medias. Si lo hay, se termina en BMAD.
+- Al menos una de las primeras tres lleva una feature que cambie un contrato compartido, de `Shared` o de dos módulos. Sin eso no sabemos si el método aguanta cambios de plataforma.
+
+## Preparación de cada repo, una vez
+
+1. **Instalar el plugin** para todo el repo, desde su clon:
+   ```bash
+   claude plugin marketplace add SensoriaCity/city-aidd --scope project
+   claude plugin install city@sensoria --scope project
+   ```
+   Escribe la configuración en `.claude/settings.json` del repo, que retiene CODEOWNERS. En una sesión, `/city:` debe mostrar `build`, `ship` y `check`, y `/mcp` el servidor `plugin:city:playwright`.
+2. **`.city.json`** en la raíz, contra `plugins/city/city.schema.json`. Su `qa` levanta una instalación local limpia; sin ella no hay evaluador y sin evaluador no hay `passes`.
+3. **`docs/harness/entorno.md`** con lo propio de la máquina: puertos, versiones y cómo bajar una instalación.
+4. **Labels:** `gh label create city --description "Flujo city" --repo SensoriaCity/<repo>` y `gh label create adr --description "Trae un ADR" --repo SensoriaCity/<repo>`.
+5. **Ruleset en `main`** con los checks requeridos (CI del repo, `revisor`, `evidencia`), squash, historial lineal y sin push directo; CODEOWNERS con los patrones de `codeowners_paths`; auto-merge permitido.
+6. **Job `revisor`** en CI, como dice "En CI" de `metodo.md`, con los secretos `CLAUDE_CODE_OAUTH_TOKEN` y `CITY_AIDD_TOKEN` (lectura de este repo).
+7. **Sandbox y `deny`** en `.claude/settings.json`: sistema de archivos en el worktree, red a `github.com` y al registro de imágenes, y `deny` en los archivos de política.
+8. **Notion:** cada spec es un hito en Hitos v2 y cada corte una tarea en Tareas v2 ligada al hito, con la URL de su PR. Para medir cuánto tarda una tarea de En progreso a Finalizado, las dos automatizaciones de `programa-medicion.md` §10 (`Inicio` y `Fin`).
+9. **`aidd-metrics`:** aplicar `integracion-aidd-metrics.md` y registrar el evento de la squad.
+10. **Kickoff de 45 minutos** con la squad: leer `metodo.md` juntos y hacer en vivo una funcionalidad pequeña con UI, de `/city:build` a `/city:check`, para que vean al evaluador probar.
+
+## Cada semana
+
+| Cuándo | Qué | Quién | Duración |
+|---|---|---|---|
+| Cada viernes | Entrada en `bitacora.md` con los números de la semana y los tropiezos | Alguien de cada squad | 15 min |
+| Cada viernes | Retro: números, `/city:check semana` y una pieza del kit a quitar o ajustar | Squads activas + CTO | 30 min |
+| Cada viernes | Máximo un cambio de comportamiento al kit, con versión y línea en `CHANGELOG.md` | CTO | |
+
+**Números de la semana.** Mientras el dashboard de `aidd-metrics` no tenga la clasificación por flujo (ING-007), salen de GitHub, desde la raíz del repo medido:
+
+```bash
+gh pr list --repo SensoriaCity/<repo> --state merged --limit 1000 \
+  --search "merged:>=<inicio>" \
+  --json number,title,author,headRefName,baseRefName,labels,createdAt,mergedAt,additions,deletions,changedFiles,files,reviews,commits \
+  | python3 ~/Projects/city-aidd/scripts/numeros.py
+```
+
+El script lee la firma (`ramas` y `label`) del `.city.json` del repo, clasifica con una versión simplificada del ADR-008 y da, por flujo: n, tamaño p50 y p85, lead time del primer commit al merge, % sin revisión humana, primera revisión humana p50 y % de aprobación rápida. Con `--autores usuario1,usuario2` filtra por los autores de una squad. En el flujo `city` el % sin revisión humana es alto a propósito: lo que importa ahí son los guardarraíles de abajo.
+
+**Actualizar el kit.** Cuando cambia la versión, en cada repo: `claude plugin marketplace update sensoria` y `claude plugin update city@sensoria`, y reiniciar Claude Code. CI toma la versión de `main` de este repo en cada corrida. La bitácora registra la versión que usó cada squad esa semana.
+
+No se juzga a una squad antes de su semana 4. DORA espera una caída de productividad al inicio de cualquier cambio de proceso (curva J, informe p.8 a p.10).
+
+## Guardarraíles
+
+Si uno falla en la semana de una squad, no entra la siguiente hasta corregir la causa.
+
+1. 0 funcionalidades con `passes: true` sin evidencia del evaluador.
+2. 0 PR mergeados con el check `revisor` en rojo o ausente.
+3. Arreglos a producción atribuibles a PR de `city` no mayores que los de `bmad` + 5 pp en el mismo periodo (B8, A3).
+4. Churn a 21 días de los PR de `city` no mayor que el de `bmad` del mismo tramo (B9).
+
+**Flujo,** desde la semana 4 de cada squad: lead time p50 del primer commit al merge menor en `city` que en `bmad` (A1), o cycle time p50 de las tareas de Notion menor con throughput no menor que la historia de la squad (C2, C4).
+
+**Señales para la retro,** no deciden solas: hallazgos reales o ruido del `revisor` y del `evaluador`, pasos `no verificado`, PR retenidos por CODEOWNERS por semana y lo que QA humano encontró en la feature completa que el evaluador debió ver.
+
+**Muestra.** Cada grupo necesita n ≥ 5 (`min_sample_size`). Si no se alcanza, se espera otra semana en vez de decidir con muestra insuficiente.
+
+## Salida de emergencia
+
+Si una squad no puede trabajar con el método, lo anota en `bitacora.md` con el motivo y el CTO decide. Para salir: `claude plugin uninstall city@sensoria --scope project` en un PR, y la squad vuelve a BMAD. Las funcionalidades y su evidencia se quedan como documentación de lo que se construyó.
+
+## Guía de la retro
+
+1. ¿Entendías qué construir antes de empezar cada funcionalidad?
+2. ¿El revisor y el evaluador encontraron problemas reales o ruido? ¿QA humano encontró en la feature completa algo que el evaluador debió ver?
+3. ¿Qué PR retuvo CODEOWNERS y valió la pena leerlo?
+4. ¿Confías en el código que llegó a `main` sin que nadie lo leyera?
+5. ¿Qué pieza del kit quitarías esta semana, y cómo sabríamos si hizo falta?

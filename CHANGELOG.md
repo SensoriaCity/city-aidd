@@ -1,6 +1,9 @@
 # Changelog
 
-Una línea por cambio de comportamiento del kit. Durante el piloto, máximo uno por semana.
+Una línea por cambio de comportamiento del kit. Durante la adopción, máximo uno por semana.
+
+## city 1.1.0 · 2026-10-03
+- Un solo plugin, `city`: se borran `plugins/aidd-lite/`, `docs/qa-navegador.md` y `piloto/` (su estado queda en el tag `aidd-lite-0.2.0`); `validar.sh` valida solo `city`; `numeros.py` toma la firma (`ramas` y `label`) del `.city.json` del repo y mide el tamaño como `tamano.sh`. `docs/metodo.md` es el método de `city` (absorbe `plugin-city.md`), `docs/adopcion.md` reemplaza a `piloto.md`, y `bitacora.md` pasa a la raíz. Motivo: el piloto de AIDD Lite no empezó y `city` lo reemplaza. Sin entrada en `bitacora.md`: decisión de diseño, no tropiezo.
 
 ## city 1.0.3 · 2026-10-03
 - Evaluador con reglas uniformes de prueba y alcance: una cláusula "con su prueba en <grupo o suite>" se verifica corriendo esa prueba en el clon con el comando de `tests` (y la receta de `tests.postgres`, campo opcional nuevo, si necesita base desechable), nunca leyendo CI; si no puede correrla, el paso queda `no verificado` y no cumple. Lo que encuentra fuera de la funcionalidad va en "Fuera de alcance", media como máximo, sin cambiar el veredicto. Guiones y logs solo en un `mktemp -d` propio que borra al terminar, nunca en el clon ni en el worktree, y la evidencia dice si algo quedó. `build` copia `.city.json` del worktree al clon si falta. El ejemplo de city-v2 nombra `bin/pest-postgres.sh`. Motivo: calibración del evaluador (la misma cláusula se verificaba distinto según el paso, hallazgos ajenos a la funcionalidad cambiaban el veredicto y quedaban archivos en el repo). Sin entrada en `piloto/bitacora.md`: corrección de 1.0.2, no tropiezo del piloto.
