@@ -1,0 +1,15 @@
+{
+  "name": "sensoria",
+  "description": "Plugins internos de Sensoria City para desarrollo asistido por IA",
+  "owner": {
+    "name": "Sensoria City",
+    "email": "belmar@sensoria.city"
+  },
+  "plugins": [
+    {
+      "name": "aidd-lite",
+      "source": "./plugins/aidd-lite",
+      "description": "Método liviano de desarrollo asistido por IA: spec de una página, cortes de ≤400 líneas directo a main, revisor en contexto limpio y revisión humana obligatoria. Convive con BMAD."
+    }
+  ]
+}
