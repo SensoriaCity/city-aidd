@@ -12,7 +12,7 @@
 - #<n> <título> · espera a <persona o equipo> · <archivos que lo retienen>
 
 ## En rojo
-- #<n> <título> · <revisor o evaluador>: <motivo en una línea>
+- #<n> <título> · <revisor, evidencia o evaluador; o "sin check revisor/evidencia">: <motivo en una línea>
 
 ## ADR
 - Nuevos: <ruta> · <título>

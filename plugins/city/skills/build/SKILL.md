@@ -53,6 +53,7 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
 9. **Revisor.** Delega al subagente `city:revisor` con una sola línea, sin tu resumen:
    `id: <id> · rama: <rama> · base: origin/main`
    No edites mientras corre. Corrige los hallazgos altos, haz commit y pide otra vuelta: máximo 2. Los medios y bajos no bloquean; guárdalos para el PR. Si tras 2 vueltas sigue en rojo, no insistas: el PR nace bloqueado y lo decide una persona.
+   Si el diff toca autenticación, permisos, archivos, integraciones o el CLI, delega también al subagente `city:seguridad` con la misma línea y las mismas reglas.
 
 10. **Evaluador,** solo si la funcionalidad tiene UI o API: sus pasos hablan de pantalla, navegador, endpoint o respuesta HTTP, o el diff toca rutas, controladores, vistas o frontend.
     - Antes, ver `docs/harness/entorno.md` del repo. Si hay una instalación que no creó esta sesión, no la bajes ni borres datos: di qué encontraste y espera el sí de la persona.

@@ -59,10 +59,11 @@ for f in plugins/*/skills/*/SKILL.md plugins/*/agents/*.md; do
   done
 done
 
-echo "6/10 aidd-lite: .mcp.json del plugin y herramientas del agente QA"
-python3 - "$PLUGIN" <<'PY' || fail=1
+echo "6/10 .mcp.json de cada plugin y herramientas de su agente de navegador"
+for par in "$PLUGIN:qa-navegador" "$CITY:evaluador"; do
+python3 - "${par%%:*}" "${par#*:}" <<'PY' || fail=1
 import json, re, sys
-plugin = sys.argv[1]
+plugin, agente = sys.argv[1], sys.argv[2]
 cfg = json.load(open(f"{plugin}/.mcp.json"))["mcpServers"]
 nombre = json.load(open(f"{plugin}/.claude-plugin/plugin.json"))["name"]
 ok = True
@@ -75,16 +76,17 @@ else:
     args = " ".join(cfg["playwright"].get("args", []))
     if not re.search(r"@playwright/mcp@\d+\.\d+\.\d+", args):
         mal("la versión de @playwright/mcp no está fija")
-tools = next((l for l in open(f"{plugin}/agents/qa-navegador.md") if l.startswith("tools:")), "")
+tools = next((l for l in open(f"{plugin}/agents/{agente}.md") if l.startswith("tools:")), "")
 prefijo = f"mcp__plugin_{nombre}_playwright__"
 for necesaria in ("browser_navigate", "browser_snapshot", "browser_take_screenshot"):
     if prefijo + necesaria not in tools:
-        mal(f"qa-navegador no tiene {prefijo}{necesaria}")
+        mal(f"{agente} no tiene {prefijo}{necesaria}")
 for prohibida in ("browser_run_code_unsafe", "browser_evaluate", prefijo + "*"):
     if prohibida in tools:
-        mal(f"qa-navegador no debe tener {prohibida}")
+        mal(f"{agente} no debe tener {prohibida}")
 sys.exit(0 if ok else 1)
 PY
+done
 
 echo "7/10 aidd-lite: la regla de ADR responde bien a nueve casos"
 if command -v php >/dev/null 2>&1; then
@@ -109,17 +111,18 @@ v=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$PLUGIN/.claude-plugin/plugin.j
 grep -q "^## $v " CHANGELOG.md || err "CHANGELOG.md no tiene entrada para $v"
 
 echo "9/10 city: el kit no sabe nada del stack"
-for f in "$CITY"/skills/*/SKILL.md; do
+for f in "$CITY"/skills/*/SKILL.md "$CITY"/agents/*.md; do
   grep -q '\.city\.json' "$f" || err "no lee .city.json: $f"
 done
-if grep -rn 'php84\|pnpm -C web\|bin/city\|8080' "$CITY/skills"; then err "stack en duro en $CITY/skills"; fi
+for a in revisor evaluador seguridad; do [ -f "$CITY/agents/$a.md" ] || err "falta el agente $a"; done
+if grep -rn 'php84\|pnpm -C web\|bin/city\|8080' "$CITY/skills" "$CITY/agents"; then err "stack en duro en $CITY"; fi
 if grep -rn 'diff --shortstat' "$CITY/skills" "$CITY/agents"; then err "el tamaño se mide solo con scripts/tamano.sh"; fi
 for f in "$CITY/skills/build/SKILL.md" "$CITY/skills/ship/SKILL.md"; do
   grep -qF 'bash "${CLAUDE_PLUGIN_ROOT}/scripts/tamano.sh"' "$f" || err "no llama a scripts/tamano.sh: $f"
 done
 python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$CITY/city.schema.json" || err "city.schema.json no es JSON"
 
-echo "10/10 city: tamano.sh cuenta bien en un repo de prueba"
+echo "10/10 city: tamano.sh, marcar-passes.py y entorno-qa.py en un repo de prueba"
 T="$(pwd)/$CITY/scripts/tamano.sh"
 bash -n "$T" || err "tamano.sh no compila"
 tmp=$(mktemp -d)
@@ -136,6 +139,28 @@ printf '{"tope_lineas": 3, "evidencia_dir": "ev/"}\n' > "$tmp/.city.json"
 printf '{"tope_lineas": 2, "evidencia_dir": "ev"}\n' > "$tmp/.city.json"
 (cd "$tmp" && bash "$T" >/dev/null 2>&1); [ $? -eq 1 ] || err "3 líneas deberían pasar el tope 2 y salir con 1"
 (cd / && bash "$T" >/dev/null 2>&1); [ $? -eq 2 ] || err "fuera de un repo git debería salir con 2"
+
+M="$(pwd)/$CITY/scripts/marcar-passes.py"
+printf '{"features": "f.json", "evidencia_dir": "ev"}\n' > "$tmp/.city.json"
+printf '[\n  {\n    "id": "S1",\n    "pasos": ["a"],\n    "passes": false\n  },\n  {\n    "passes": false,\n    "id": "S2"\n  }\n]\n' > "$tmp/f.json"
+cp "$tmp/f.json" "$tmp/f.orig"
+(cd "$tmp" && python3 "$M" S2 >/dev/null 2>&1) && err "marcar-passes sin evidencia debería fallar"
+printf 'VEREDICTO: no pasa\n' > "$tmp/ev/S2.md"
+(cd "$tmp" && python3 "$M" S2 >/dev/null 2>&1) && err "marcar-passes con VEREDICTO: no pasa debería fallar"
+cmp -s "$tmp/f.json" "$tmp/f.orig" || err "marcar-passes no debería tocar el archivo cuando falla"
+printf '# Evidencia de S2\nVEREDICTO: pasa\n' > "$tmp/ev/S2.md"
+(cd "$tmp" && python3 "$M" S2 >/dev/null 2>&1) || err "marcar-passes con VEREDICTO: pasa debería cambiar S2"
+[ "$(diff "$tmp/f.orig" "$tmp/f.json" | grep -c '^[<>]')" -eq 2 ] || err "marcar-passes debería cambiar una sola línea"
+[ "$(python3 -c 'import json,sys; print([f["passes"] for f in json.load(open(sys.argv[1]))])' "$tmp/f.json")" = "[False, True]" ] || err "marcar-passes debería cambiar S2 y no S1"
+(cd "$tmp" && python3 "$M" S2 >/dev/null 2>&1) || err "marcar-passes sobre un passes ya en true debería salir con 0"
 rm -rf "$tmp"
+
+E="$CITY/scripts/entorno-qa.py"
+for u in http://app.localhost:18080 http://127.0.0.1:18080 'http://[::1]/'; do
+  python3 "$E" "$u" >/dev/null || err "entorno-qa debería aceptar $u"
+done
+for u in https://example.com http://10.0.0.5 ftp://localhost 'sin url'; do
+  python3 "$E" "$u" >/dev/null && err "entorno-qa debería bloquear $u"
+done
 
 if [ "$fail" -eq 0 ]; then echo "OK"; else echo "FALLÓ"; exit 1; fi

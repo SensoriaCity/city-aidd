@@ -1,6 +1,6 @@
 ---
 name: check
-description: Reporte de cierre de solo lectura para quien libera, desde gh y git: PR mergeados con su versión, funcionalidades tocadas con passes y evidencia, PR retenidos por CODEOWNERS, PR con revisor o evaluador en rojo, ADR pendientes, smoke de la instalación y qué clickear en la app. Para una funcionalidad, el día o la semana.
+description: Reporte de cierre de solo lectura para quien libera, desde gh y git: PR mergeados con su versión, funcionalidades tocadas con passes y evidencia, PR retenidos por CODEOWNERS, PR con revisor o evidencia en rojo, ADR pendientes, smoke de la instalación y qué clickear en la app. Para una funcionalidad, el día o la semana.
 argument-hint: "<id> | hoy | semana"
 disable-model-invocation: true
 ---
@@ -26,7 +26,7 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
 1. **Mergeados** en el rango: `gh pr list --state merged --search "merged:>=<AAAA-MM-DD>" --limit 100 --json number,title,mergedAt,mergeCommit,headRefName,url`. Versión: `git tag --points-at <mergeCommit.oid>`; sin tag, "sin versión".
 2. **Funcionalidades tocadas:** los ids de las ramas `<ramas>AAAA-MM-DD-<id>` y de `git show <oid> -- <features>` de cada merge. Estado actual: `git show origin/main:<features> | jq` para cada id. Evidencia: si `git cat-file -e origin/main:<evidencia_dir>/<id>.md`, su URL en GitHub (`<url>/blob/main/<evidencia_dir>/<id>.md`) y su línea `VEREDICTO:`. `passes: true` sin evidencia es un hallazgo.
 3. **Retenidos por CODEOWNERS:** `gh pr list --state open --label <label> --json number,title,url,files,reviewDecision,reviewRequests`. Retenido es un PR con un archivo que coincide con `codeowners_paths` y `reviewDecision` distinta de `APPROVED`. Son los únicos diffs que lee la persona: lista número, a quién espera y los archivos que lo retienen.
-4. **En rojo:** PR abiertos con un check cuyo nombre contiene `revisor` o `evaluador` en `FAILURE` (`gh pr checks <n>`), o con `**Bloqueado:**` en el cuerpo.
+4. **En rojo:** PR abiertos (`gh pr checks <n>`) con el check `revisor` o `evidencia` en `FAILURE`, o con `**Bloqueado:**` en el cuerpo. El check `evaluador` es opcional: si existe y falla, cuenta; si el repo no lo tiene, no es hallazgo. Un PR sin `revisor` o sin `evidencia` sí lo es: dilo.
 5. **ADR:** nuevos en el rango con `git log origin/main --since=<desde> --diff-filter=A --name-only -- <adr_dir>`, y pendientes: PR abiertos que tocan `adr_dir` o cuyo cuerpo dice "necesita ADR" o "ADR: falta".
 6. **Smoke:** si hay una instalación viva (cómo se reconoce: ver `docs/harness/entorno.md` del repo; si no lo dice, `curl -s -o /dev/null -w '%{http_code}' <qa.url>`), corre `qa.smoke` literal y toma su resultado. Si no hay instalación, "sin instalación"; no levantes una.
 7. **Qué clickear:** de 3 a 5 acciones tomadas de los pasos de las funcionalidades tocadas con UI, escritas como "en `<qa.url>` …, haz … y verás …". No inventes rutas ni datos: si el paso no los dice, cítalo como está.
