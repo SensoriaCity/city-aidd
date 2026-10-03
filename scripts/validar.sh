@@ -9,16 +9,16 @@ PLUGINS="$PLUGIN $CITY"
 fail=0
 err() { echo "  ✗ $1"; fail=1; }
 
-echo "1/10 claude plugin validate --strict (marketplace)"
+echo "1/11 claude plugin validate --strict (marketplace)"
 claude plugin validate --strict . || fail=1
 
-echo "2/10 claude plugin validate --strict (plugins y skills)"
+echo "2/11 claude plugin validate --strict (plugins y skills)"
 for P in $PLUGINS; do
   claude plugin validate --strict "$P" || fail=1
   claude plugin validate --strict "$P/skills" || fail=1
 done
 
-echo "3/10 frontmatter y tamaño de skills y agentes"
+echo "3/11 frontmatter y tamaño de skills y agentes"
 for f in plugins/*/skills/*/SKILL.md plugins/*/agents/*.md; do
   [ -f "$f" ] || continue
   [ "$(head -1 "$f")" = "---" ] || err "sin frontmatter: $f"
@@ -42,12 +42,12 @@ for f in "$CITY"/agents/*.md; do
   grep -qx 'model: inherit' "$f" || err "falta model: inherit en $f"
 done
 
-echo "4/10 aidd-lite: el comando de tamaño es idéntico en build, ship y revisor"
+echo "4/11 aidd-lite: el comando de tamaño es idéntico en build, ship y revisor"
 n=$(grep -h 'diff --shortstat origin/main...HEAD' "$PLUGIN/skills/build/SKILL.md" "$PLUGIN/skills/ship/SKILL.md" "$PLUGIN/agents/revisor.md" \
   | sed 's/^[[:space:]]*//' | sort -u | wc -l | tr -d ' ')
 [ "$n" -eq 1 ] || err "el comando de tamaño difiere entre build, ship y revisor ($n variantes)"
 
-echo "5/10 archivos referenciados con \${CLAUDE_SKILL_DIR} y \${CLAUDE_PLUGIN_ROOT}"
+echo "5/11 archivos referenciados con \${CLAUDE_SKILL_DIR} y \${CLAUDE_PLUGIN_ROOT}"
 for f in plugins/*/skills/*/SKILL.md; do
   d=$(dirname "$f")
   for ref in $(grep -oE '\$\{CLAUDE_SKILL_DIR\}/[A-Za-z0-9._/-]+' "$f" | sed 's|^\${CLAUDE_SKILL_DIR}/||' | sort -u); do
@@ -62,7 +62,7 @@ for f in plugins/*/skills/*/SKILL.md plugins/*/agents/*.md; do
   done
 done
 
-echo "6/10 .mcp.json de cada plugin y herramientas de su agente de navegador"
+echo "6/11 .mcp.json de cada plugin y herramientas de su agente de navegador"
 for par in "$PLUGIN:qa-navegador" "$CITY:evaluador"; do
 python3 - "${par%%:*}" "${par#*:}" <<'PY' || fail=1
 import json, re, sys
@@ -115,7 +115,7 @@ sys.exit(0 if ok else 1)
 PY
 done
 
-echo "7/10 aidd-lite: la regla de ADR responde bien a nueve casos"
+echo "7/11 aidd-lite: la regla de ADR responde bien a nueve casos"
 if command -v php >/dev/null 2>&1; then
   R="$PLUGIN/scripts/necesita-adr.php"
   php -l "$R" >/dev/null || err "necesita-adr.php no compila"
@@ -133,11 +133,11 @@ else
   echo "  (sin php en esta máquina: se salta)"
 fi
 
-echo "8/10 aidd-lite: versión del plugin registrada en CHANGELOG.md"
+echo "8/11 aidd-lite: versión del plugin registrada en CHANGELOG.md"
 v=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$PLUGIN/.claude-plugin/plugin.json")
 grep -q "^## $v " CHANGELOG.md || err "CHANGELOG.md no tiene entrada para $v"
 
-echo "9/10 city: el kit no sabe nada del stack"
+echo "9/11 city: el kit no sabe nada del stack"
 for f in "$CITY"/skills/*/SKILL.md "$CITY"/agents/*.md; do
   grep -q '\.city\.json' "$f" || err "no lee .city.json: $f"
 done
@@ -149,7 +149,7 @@ for f in "$CITY/skills/build/SKILL.md" "$CITY/skills/ship/SKILL.md"; do
 done
 python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$CITY/city.schema.json" || err "city.schema.json no es JSON"
 
-echo "10/10 city: tamano.sh, passes.sh y entorno-qa.py en un repo de prueba"
+echo "10/11 city: tamano.sh, passes.sh y entorno-qa.py en un repo de prueba"
 T="$(pwd)/$CITY/scripts/tamano.sh"
 bash -n "$T" || err "tamano.sh no compila"
 tmp=$(mktemp -d)
@@ -226,5 +226,21 @@ for ips in 10.0.0.5 127.0.0.1,10.0.0.5 127.0.0.1,::1 ''; do
   qa_test "$ips" && err "entorno-qa debería bloquear un .test que resuelve a '${ips:-nada}'"
 done
 python3 "$E" http://city.example >/dev/null && err "entorno-qa debería bloquear un dominio que no es .test"
+
+echo "11/11 city: prueba del hook de dependencias en bash 3.2 y bash 5"
+# El test llama al hook con `bash`: un enlace al frente del PATH hace que test y
+# hook corran con el mismo bash.
+G="$(pwd)/$CITY/scripts/dependency-guard.test.sh"
+for B in /bin/bash /opt/homebrew/bin/bash; do
+  if [ ! -x "$B" ]; then echo "  (sin $B en esta máquina: se salta la prueba en bash 5)"; continue; fi
+  d=$(mktemp -d) && ln -s "$B" "$d/bash"
+  if salida=$(PATH="$d:$PATH" "$B" "$G" 2>&1); then
+    echo "  $(echo "$salida" | tail -1)"
+  else
+    echo "$salida" | grep '^FALLA' | sed 's/^/  /'
+    err "dependency-guard.test.sh falla con bash $("$B" -c 'echo $BASH_VERSION'): $(echo "$salida" | tail -1)"
+  fi
+  rm -rf "$d"
+done
 
 if [ "$fail" -eq 0 ]; then echo "OK"; else echo "FALLÓ"; exit 1; fi
