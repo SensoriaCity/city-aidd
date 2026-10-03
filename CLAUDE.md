@@ -8,7 +8,7 @@ Repo del plugin `city` de Claude Code en `plugins/city/`, su marketplace en `.cl
 - Durante la adopción entra máximo un cambio de comportamiento por semana. Cada cambio sube la versión en `plugins/city/.claude-plugin/plugin.json` y agrega una línea en `CHANGELOG.md` bajo `## city <versión> · <fecha>`, con el motivo y la entrada de `bitacora.md` que lo pidió.
 - Una skill o regla nueva entra solo si la bitácora muestra el mismo tropiezo dos veces.
 - Cada `SKILL.md` se queda por debajo de 120 líneas. Lo que no quepa va a un archivo de apoyo en la misma carpeta, referenciado con `${CLAUDE_SKILL_DIR}`.
-- Las skills llevan `disable-model-invocation: true`: las invoca la persona, no el modelo.
+- Las skills llevan `disable-model-invocation: true`: las invoca la persona, no el modelo. La única excepción es `revisar`, que corre en GitHub Actions sin persona; no pasa de 60 líneas, lee del PR solo rama, base y título, y delega al revisor con una sola línea.
 - No hay roles: ninguna skill distingue senior, junior ni TL. El control humano está en `/city:check`, en la feature completa antes del flag, en la retro y en los PR que retiene CODEOWNERS.
 - El kit no sabe nada del stack: todo lo que ejecuta o lee sale de `.city.json`, cuyo contrato es `plugins/city/city.schema.json`. `validar.sh` falla si una skill o agente nombra un comando de un stack o no lee `.city.json`.
 - Los agentes `revisor`, `seguridad` y `evaluador` no tienen herramientas de edición y no se les agregan. Su Bash no está restringido por el runtime, así que sus límites viven en el prompt: el revisor y seguridad solo leen y corren pruebas; el evaluador solo prueba en una instalación local, nunca reinicia la base ni borra volúmenes, y escribe solo en su `mktemp -d`.

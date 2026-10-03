@@ -49,18 +49,61 @@ Fuera del desarrollo:
 | `/city:build` | Cualquiera | id de funcionalidad, y el plan del día si lo hay | Rama `<ramas>AAAA-MM-DD-<id>`: prueba primero, implementación, tamaño, ADR, veredictos del `revisor` (y de `seguridad` si aplica) y del `evaluador`. Guarda la evidencia y, si pasa, corre `passes.sh`. |
 | `/city:ship` | Cualquiera | nada | PR a `main` con la plantilla del repo, el `label` y `gh pr merge --auto --squash`. Si CODEOWNERS retiene, dice qué archivos y a quién. |
 | `/city:check` | Quien libera | `<id>`, `hoy` o `semana` | Reporte de solo lectura de 10 minutos: mergeados y versiones, `passes` con evidencia, retenidos, PR en rojo, ADR pendientes, smoke y qué clickear. |
+| `/city:revisar` | CI, o cualquiera a mano | número de PR | Delega al `revisor` con `id · rama · base` y deja su respuesta en `veredicto.md` y el veredicto en `veredicto.txt`. Es la única skill que puede invocar el modelo, porque corre sin persona. |
 
 Diseñados y todavía sin construir, en este orden: `/city:spec` (spec de una página y funcionalidades), `/city:goal` (build → ship en bucle hasta cerrar la spec o parar), `/city:retro` (números y una pieza menos) y `/city:adr`. Hasta entonces, la spec y las funcionalidades se escriben con el plan del día del repo.
 
 ## Agentes
 
-- **`revisor`.** Contexto limpio, sin edición. Recibe `<id> · <rama> · <base>`. Lee el diff completo, corre las pruebas de `tests`, aplica las reglas duras del `CLAUDE.md` del repo, el checklist de seguridad (`seguridad_checklist`) y los chequeos del stack (`revisor_extra`). Hallazgos `bloquea`, `debería` o `sugerencia`; termina en `Veredicto: listo para merge` o `Veredicto: no mergear`. Máximo dos vueltas; a la tercera, el PR nace bloqueado y lo decide una persona. Corre dentro de `/city:build` y como check de CI.
+- **`revisor`.** Contexto limpio, sin edición. Recibe `<id> · <rama> · <base>`. Lee el diff completo, corre las pruebas de `tests`, aplica las reglas duras del `CLAUDE.md` del repo, el checklist de seguridad (`seguridad_checklist`) y los chequeos del stack (`revisor_extra`). Hallazgos `bloquea`, `debería` o `sugerencia`; termina en `Veredicto: listo para merge` o `Veredicto: no mergear`. Máximo dos vueltas; a la tercera, el PR nace bloqueado y lo decide una persona. Corre dentro de `/city:build` y como check de CI con `/city:revisar` (ver "En CI").
 - **`seguridad`.** Solo cuando el diff toca autenticación, permisos, archivos, integraciones o el CLI, y solo sobre los archivos que le pasan. Mismo veredicto que el revisor.
 - **`evaluador`.** Contexto limpio, sin edición, sin `browser_evaluate` ni `browser_run_code_unsafe`. Recibe el id, la URL de una instalación local limpia (`entorno-qa.py` lo confirma) y la ruta del clon donde corre. Ejecuta cada paso como un usuario: UI con Playwright, API con curl, infra con bash y `qa.smoke`; una cláusula "con su prueba en <grupo o suite>" la verifica corriendo esa prueba en el clon (con `tests.postgres` si necesita base desechable), nunca leyendo CI. Umbral duro: un paso que no cumple o no se pudo verificar, no pasa. Lo que ve fuera de la funcionalidad va en "Fuera de alcance" y no cambia el veredicto. Solo con `instalacion: desechable` ejecuta pasos que borran o alteran filas; nunca reinicia la base ni borra volúmenes. Calibrado con ejemplos de "esto no pasa", porque un evaluador sin calibrar se convence de que un problema no es grave.
 
 ## `.city.json`
 
 El contrato entre el kit y cada repo está en `plugins/city/city.schema.json`; el de city-v2 sirve de ejemplo en `docs/ejemplos/city-v2.city.json`. De ahí salen los comandos de prueba (`tests`), la instalación del evaluador (`qa`), `features`, `evidencia_dir`, `adr_dir`, `ramas`, `label`, `codeowners_paths` y `tope_lineas`. Lo propio de cada máquina (puertos, versiones, cómo bajar una instalación) va en `docs/harness/entorno.md` del repo.
+
+## En CI
+
+El check `revisor` del ruleset es este job. Corre `/city:revisar` sobre el PR con el plugin de `main` de este repo y falla si el veredicto no es `listo para merge`. Solo corre en los PR con el label `city`; en los demás queda saltado, y GitHub cuenta un job saltado como check pasado.
+
+```yaml
+name: revisor
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  revisor:
+    if: contains(github.event.pull_request.labels.*.name, 'city')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          plugin_marketplaces: https://x-access-token:${{ secrets.CITY_AIDD_TOKEN }}@github.com/SensoriaCity/city-aidd.git
+          plugins: city@sensoria
+          prompt: "/city:revisar ${{ github.event.pull_request.number }}"
+          claude_args: "--max-turns 30"
+      - name: Veredicto en el resumen
+        if: always() && hashFiles('veredicto.md') != ''
+        run: cat veredicto.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Veredicto
+        run: grep -q "listo para merge" veredicto.txt
+```
+
+- `CLAUDE_CODE_OAUTH_TOKEN` sale de `claude setup-token`; `CITY_AIDD_TOKEN` es un token de solo lectura de `SensoriaCity/city-aidd`. Ninguno da acceso a un entorno.
+- El job no recibe el cuerpo ni los comentarios del PR: la skill lee solo rama, base y título, y el revisor recibe una línea.
+- Si falta `veredicto.txt` (la sesión se cortó o llegó a `--max-turns`), el último paso falla y el PR no entra.
+- Las pruebas que corre el revisor necesitan las dependencias del repo en el runner; si no están, las reporta como "no corrido". Si el job corta por permisos de Bash, los comandos van en `claude_args` con `--allowedTools`.
 
 ## Las cuatro capas que sostienen el auto-merge
 

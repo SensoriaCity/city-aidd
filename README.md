@@ -9,7 +9,8 @@ El plugin `city` de Claude Code: el flujo de desarrollo con agentes de Sensoria 
 | `/city:build` | Cualquiera | Construye una funcionalidad en su rama: prueba primero, tamaño, ADR, revisor y evaluador sobre una instalación limpia. `passes` cambia solo con la evidencia del evaluador |
 | `/city:ship` | Cualquiera | Abre el PR con la plantilla del repo y el label, y lo deja en auto-merge por squash |
 | `/city:check` | Quien libera | Reporte de cierre de solo lectura: mergeados, `passes` con evidencia, retenidos, PR en rojo, ADR y qué clickear |
-| `city:revisor` | `build`, `ship` y CI | Lee el diff en contexto limpio; termina en "listo para merge" o "no mergear" |
+| `/city:revisar` | CI, o cualquiera a mano | Revisa un PR por número con el `revisor` y deja `veredicto.md` y `veredicto.txt` para el check de CI |
+| `city:revisor` | `build`, `ship` y `revisar` | Lee el diff en contexto limpio; termina en "listo para merge" o "no mergear" |
 | `city:seguridad` | `build` | Audita los archivos del diff que tocan autenticación, permisos, archivos, integraciones o el CLI |
 | `city:evaluador` | `build` | Prueba la funcionalidad como usuario con Playwright, curl y bash; su evidencia es el único camino a `passes` |
 
@@ -43,11 +44,12 @@ plugins/city/
   skills/build/                     SKILL.md
   skills/ship/                      SKILL.md + plantilla-pr.md
   skills/check/                     SKILL.md + plantilla-cierre.md
+  skills/revisar/                   SKILL.md, la que corre en GitHub Actions
   agents/                           revisor.md, seguridad.md y evaluador.md, sin edición
   hooks/hooks.json                  dependency-guard antes de Bash y de cada edición
   scripts/                          tamano.sh, passes.sh, entorno-qa.py y dependency-guard.sh
 docs/
-  metodo.md                         el método: ciclo, reglas, agentes, capas y control humano
+  metodo.md                         el método: ciclo, reglas, agentes, CI, capas y control humano
   adopcion.md                       city-v2 primero, luego una squad de city por semana
   fundamentos.md                    DORA y Anthropic detrás de cada regla
   coexistencia-bmad.md              qué no se toca en city mientras haya squads en BMAD

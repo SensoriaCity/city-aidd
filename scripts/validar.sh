@@ -23,10 +23,24 @@ for f in "$CITY"/skills/*/SKILL.md "$CITY"/agents/*.md; do
   n=$(wc -l < "$f" | tr -d ' ')
   [ "$n" -le 120 ] || err "más de 120 líneas ($n): $f"
 done
+# revisar corre en CI sin persona: es la única que el modelo puede invocar, y es corta.
+R="$CITY/skills/revisar/SKILL.md"
 for f in "$CITY"/skills/*/SKILL.md; do
-  grep -q '^disable-model-invocation: true' "$f" || err "falta disable-model-invocation: true en $f"
+  if [ "$f" = "$R" ]; then
+    grep -q '^disable-model-invocation:' "$f" && err "revisar corre en CI: no lleva disable-model-invocation"
+    n=$(wc -l < "$f" | tr -d ' ')
+    [ "$n" -le 60 ] || err "revisar pasa de 60 líneas ($n)"
+  else
+    grep -q '^disable-model-invocation: true' "$f" || err "falta disable-model-invocation: true en $f"
+  fi
   grep -q '^argument-hint: ' "$f" || err "falta argument-hint en $f"
 done
+if [ -f "$R" ]; then
+  grep -o 'gh pr view [^`]*' "$R" | grep -qv -- '--json headRefName,baseRefName,title$' && err "revisar lee del PR más que rama, base y título"
+  grep -qF '<id> · origin/<head> · origin/<base>' "$R" || err "revisar no delega con una sola línea id · rama · base"
+else
+  err "falta la skill revisar"
+fi
 for f in "$CITY"/agents/*.md; do
   [ -f "$f" ] || continue
   grep -qE '^tools: ' "$f" || err "sin lista de tools (heredaría las de edición): $f"
