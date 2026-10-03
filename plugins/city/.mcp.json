@@ -10,7 +10,7 @@
         "--ignore-https-errors",
         "--no-webmcp",
         "--output-dir",
-        "${CLAUDE_PROJECT_DIR}/.playwright-mcp"
+        "${TMPDIR:-/tmp}/city-playwright"
       ]
     }
   }

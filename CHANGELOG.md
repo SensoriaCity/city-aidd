@@ -2,6 +2,9 @@
 
 Una línea por cambio de comportamiento del kit. Durante la adopción, máximo uno por semana.
 
+## city 1.1.3 · 2026-10-03
+- `ship` acepta ramas con prefijo Conventional (`chore/`, `fix/`, `docs/`, `build/`, `ci/`, `refactor/`, `test/`) además de `ramas`; solo rechaza una rama sin prefijo reconocible. En esas ramas el id es `ninguna`: no hay evaluador ni cambio de `passes`, y el título es Conventional Commit con el tipo del prefijo. El servidor de Playwright escribe en `${TMPDIR:-/tmp}/city-playwright` y no en `.playwright-mcp/` del proyecto; el evaluador lo nombra en `Temporales:` y lo borra al terminar, y `validar.sh` falla si `--output-dir` falta o apunta al repo. Motivo: `ship` rechazaba los PR de mantenimiento y `.playwright-mcp/` quedó suelto en city-v2. Sin entrada en `bitacora.md`: corrección, no tropiezo.
+
 ## city 1.1.2 · 2026-10-03
 - Herramientas de `revisar` en CI: la skill declara `allowed-tools: Bash(git *), Bash(gh *), Read, Grep, Glob, Write, Agent, Task` y el workflow de "En CI" en `docs/metodo.md` pasa `--allowedTools "Bash,Read,Grep,Glob,Write,Agent,Task"` en `claude_args`. Motivo: sin permisos explícitos, la sesión de CI no tiene a quién pedirlos y no puede correr `git`, `gh`, delegar al `revisor` ni escribir `veredicto.md`. Sin entrada en `bitacora.md`: corrección de 1.1.1, no tropiezo.
 

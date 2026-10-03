@@ -84,6 +84,10 @@ else:
     version = re.search(r"@playwright/mcp@(\d+\.\d+\.\d+)", args)
     if not version:
         mal("la versión de @playwright/mcp no está fija")
+    salida = cfg["playwright"]["args"]
+    salida = salida[salida.index("--output-dir") + 1] if "--output-dir" in salida[:-1] else ""
+    if not salida or "CLAUDE_PROJECT_DIR" in salida:
+        mal("@playwright/mcp necesita --output-dir fuera del repo")
 # Herramientas de cada versión fija de @playwright/mcp (tools/list). Al subir
 # la versión, agrega su lista aquí.
 EXISTEN = {
