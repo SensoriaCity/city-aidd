@@ -26,7 +26,7 @@ Repo del plugin `city` de Claude Code en `plugins/city/`, su marketplace en `.cl
 ./scripts/validar.sh
 ```
 
-Corre `claude plugin validate --strict` sobre el marketplace, el plugin y sus skills; revisa frontmatter, tamaño, que los agentes no editen, archivos referenciados, el `.mcp.json` y las herramientas del evaluador, que la versión tenga entrada en el changelog, que el kit no nombre el stack, `tamano.sh`, `passes.sh` y `entorno-qa.py` en un repo de prueba, y la prueba del hook de dependencias.
+Corre `claude plugin validate --strict` sobre el marketplace, el plugin y sus skills; revisa frontmatter, tamaño, que los agentes no editen, archivos referenciados, el `.mcp.json` y las herramientas del evaluador, que la versión tenga entrada en el changelog, que el kit no nombre el stack, `tamano.sh`, `passes.sh` y `entorno-qa.py` en un repo de prueba, la prueba del hook de dependencias, y ShellCheck y la prueba en seco de `goal.sh` (necesita `shellcheck`).
 
 Para probar un cambio en un repo sin instalar, desde su clon:
 

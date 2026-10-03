@@ -2,6 +2,9 @@
 
 Una línea por cambio de comportamiento del kit. Durante la adopción, máximo uno por semana.
 
+## city 1.2.0 · 2026-10-03
+- Skill `goal` y `scripts/goal.sh`, el bucle por objetivo: corre varias funcionalidades sin persona, una a la vez, cada una en un worktree nuevo desde `origin/main` con `claude -p "/city:build <id> [plan]"` y `claude -p "/city:ship"` en `--permission-mode auto --permission-prompts none`; espera `gh pr checks --watch` y el merge, reintenta una vez si un check falla y para ese id al segundo fallo. Paradas globales: `--max-sesiones` (12), `--max-bloqueos` ids seguidos sin merge (2), `necesita ADR` o `Bloqueo` en la salida de build, y Docker apagado. Baja la instalación con `qa.bajar` (campo opcional nuevo de `.city.json`; sin él, Compose con el perfil `onprem`) y borra el worktree solo si el PR entró. Log en `${TMPDIR:-/tmp}/city-goal/`, resumen `goal.md` por stdout. `validar.sh` corre ShellCheck sobre el script y una prueba en seco con `claude`, `gh` y `docker` falsos en bash 3.2 y 5. `goal` deja de estar en "diseñados y sin construir" de `docs/metodo.md`. Motivo: correr cortes de noche sin nadie mirando. Sin entrada en `bitacora.md`: parte del diseño de 1.0, no tropiezo.
+
 ## city 1.1.4 · 2026-10-03
 - `check` recupera el arreglo que se quedó en 2f38031 sin llegar a `main`: para ver contenedores usa `docker compose ps` desde la raíz, nunca `docker compose ls`, que queda fuera del allow; y cada línea del reporte cabe en 100 columnas, tablas incluidas, con la acción o el ADR que no quepa en una segunda línea con sangría. Se agrega la entrada `city 1.0.0`, que tampoco había llegado. El chequeo de changelog por versión de `validar.sh` ya estaba en `main`. Motivo: recuperar el commit 2f38031, cuya rama se borró. Sin entrada en `bitacora.md`: corrección, no tropiezo.
 

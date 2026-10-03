@@ -50,8 +50,9 @@ Fuera del desarrollo:
 | `/city:ship` | Cualquiera | nada | PR a `main` con la plantilla del repo, el `label` y `gh pr merge --auto --squash`. Si CODEOWNERS retiene, dice qué archivos y a quién. |
 | `/city:check` | Quien libera | `<id>`, `hoy` o `semana` | Reporte de solo lectura de 10 minutos: mergeados y versiones, `passes` con evidencia, retenidos, PR en rojo, ADR pendientes, smoke y qué clickear. |
 | `/city:revisar` | CI, o cualquiera a mano | número de PR | Delega al `revisor` con `id · rama · base` (id `ninguna` si la rama y el título no lo traen) y deja su respuesta en `veredicto.md` y el veredicto en `veredicto.txt`. Es la única skill que puede invocar el modelo, porque corre sin persona. |
+| `/city:goal` | Cualquiera, en una terminal | ids en orden, y `--plan`, `--max-sesiones`, `--max-bloqueos` | Da la línea para `scripts/goal.sh`, que corre sin persona y un id a la vez: worktree desde `origin/main`, `claude -p` con `/city:build` y `/city:ship` en auto mode, espera checks y merge, un reintento si un check falla. Para todo con `necesita ADR` o `Bloqueo` en build, dos ids seguidos sin merge, el tope de sesiones (12) o Docker apagado. Deja el log en `${TMPDIR:-/tmp}/city-goal/` y el resumen `goal.md` por stdout; el cierre es `/city:check`. |
 
-Diseñados y todavía sin construir, en este orden: `/city:spec` (spec de una página y funcionalidades), `/city:goal` (build → ship en bucle hasta cerrar la spec o parar), `/city:retro` (números y una pieza menos) y `/city:adr`. Hasta entonces, la spec y las funcionalidades se escriben con el plan del día del repo.
+Diseñados y todavía sin construir, en este orden: `/city:spec` (spec de una página y funcionalidades), `/city:retro` (números y una pieza menos) y `/city:adr`. Hasta entonces, la spec y las funcionalidades se escriben con el plan del día del repo.
 
 ## Agentes
 
@@ -140,7 +141,7 @@ Nadie lee cada PR. Quien quiera leer uno, puede; no es la compuerta.
 - Personas de agente (analyst, pm, architect, sm, dev, qa). Un agente con la spec y el código a la mano hace ese trabajo con un plan corto.
 - PRD, documento de arquitectura por módulo, épicas y `sprint-status`. La spec, el hito y las tareas de Notion cubren eso; la arquitectura se decide con un ADR corto cuando un cambio cruza módulos.
 - Contratos por ronda entre generador y evaluador. Anthropic quitó los sprints de su harness al pasar a Opus 4.6 y dejó el evaluador en una pasada al final (ver `fundamentos.md`); aquí pasa una vez por funcionalidad, con máximo 2 vueltas.
-- `/city:goal` en un runner de nube: pide su propio ADR y secretos en GitHub.
+- `/city:goal` en un runner de nube: pide su propio ADR y secretos en GitHub. `goal.sh` corre en la máquina de una persona, un id a la vez, porque en la máquina cabe una sola instalación.
 - Cambios al `CLAUDE.md` del repo. El método vive en el plugin; el repo aporta sus reglas duras y su `.city.json`.
 
 ## Decisiones de diseño

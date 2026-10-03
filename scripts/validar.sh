@@ -7,14 +7,14 @@ CITY=plugins/city
 fail=0
 err() { echo "  ✗ $1"; fail=1; }
 
-echo "1/9 claude plugin validate --strict (marketplace)"
+echo "1/10 claude plugin validate --strict (marketplace)"
 claude plugin validate --strict . || fail=1
 
-echo "2/9 claude plugin validate --strict (plugin y skills)"
+echo "2/10 claude plugin validate --strict (plugin y skills)"
 claude plugin validate --strict "$CITY" || fail=1
 claude plugin validate --strict "$CITY/skills" || fail=1
 
-echo "3/9 frontmatter y tamaño de skills y agentes"
+echo "3/10 frontmatter y tamaño de skills y agentes"
 for f in "$CITY"/skills/*/SKILL.md "$CITY"/agents/*.md; do
   [ -f "$f" ] || continue
   [ "$(head -1 "$f")" = "---" ] || err "sin frontmatter: $f"
@@ -35,6 +35,8 @@ for f in "$CITY"/skills/*/SKILL.md; do
   fi
   grep -q '^argument-hint: ' "$f" || err "falta argument-hint en $f"
 done
+n=$(wc -l < "$CITY/skills/goal/SKILL.md" 2>/dev/null | tr -d ' ')
+[ "${n:-0}" -gt 0 ] && [ "$n" -le 60 ] || err "goal falta o pasa de 60 líneas (${n:-0})"
 if [ -f "$R" ]; then
   grep -o 'gh pr view [^`]*' "$R" | grep -qv -- '--json headRefName,baseRefName,title$' && err "revisar lee del PR más que rama, base y título"
   grep -qF '<id> · origin/<head> · origin/<base>' "$R" || err "revisar no delega con una sola línea id · rama · base"
@@ -52,7 +54,7 @@ for f in "$CITY"/agents/*.md; do
   grep -qx 'model: inherit' "$f" || err "falta model: inherit en $f"
 done
 
-echo "4/9 archivos referenciados con \${CLAUDE_SKILL_DIR} y \${CLAUDE_PLUGIN_ROOT}"
+echo "4/10 archivos referenciados con \${CLAUDE_SKILL_DIR} y \${CLAUDE_PLUGIN_ROOT}"
 for f in "$CITY"/skills/*/SKILL.md; do
   d=$(dirname "$f")
   for ref in $(grep -oE '\$\{CLAUDE_SKILL_DIR\}/[A-Za-z0-9._/-]+' "$f" | sed 's|^\${CLAUDE_SKILL_DIR}/||' | sort -u); do
@@ -67,7 +69,7 @@ for f in "$CITY"/skills/*/SKILL.md "$CITY"/agents/*.md; do
   done
 done
 
-echo "5/9 .mcp.json y herramientas del evaluador"
+echo "5/10 .mcp.json y herramientas del evaluador"
 python3 - "$CITY" evaluador <<'PY' || fail=1
 import json, re, sys
 plugin, agente = sys.argv[1], sys.argv[2]
@@ -122,11 +124,11 @@ for t in tools:
 sys.exit(0 if ok else 1)
 PY
 
-echo "6/9 versión del plugin registrada en CHANGELOG.md"
+echo "6/10 versión del plugin registrada en CHANGELOG.md"
 v=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$CITY/.claude-plugin/plugin.json")
 grep -q "^## city $v " CHANGELOG.md || err "CHANGELOG.md no tiene entrada para city $v"
 
-echo "7/9 el kit no sabe nada del stack"
+echo "7/10 el kit no sabe nada del stack"
 for f in "$CITY"/skills/*/SKILL.md "$CITY"/agents/*.md; do
   grep -q '\.city\.json' "$f" || err "no lee .city.json: $f"
 done
@@ -138,7 +140,7 @@ for f in "$CITY/skills/build/SKILL.md" "$CITY/skills/ship/SKILL.md"; do
 done
 python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$CITY/city.schema.json" || err "city.schema.json no es JSON"
 
-echo "8/9 tamano.sh, passes.sh y entorno-qa.py en un repo de prueba"
+echo "8/10 tamano.sh, passes.sh y entorno-qa.py en un repo de prueba"
 T="$(pwd)/$CITY/scripts/tamano.sh"
 bash -n "$T" || err "tamano.sh no compila"
 tmp=$(mktemp -d)
@@ -216,7 +218,7 @@ for ips in 10.0.0.5 127.0.0.1,10.0.0.5 127.0.0.1,::1 ''; do
 done
 python3 "$E" http://city.example >/dev/null && err "entorno-qa debería bloquear un dominio que no es .test"
 
-echo "9/9 prueba del hook de dependencias en bash 3.2 y bash 5"
+echo "9/10 prueba del hook de dependencias en bash 3.2 y bash 5"
 # El test llama al hook con `bash`: un enlace al frente del PATH hace que test y
 # hook corran con el mismo bash.
 G="$(pwd)/$CITY/scripts/dependency-guard.test.sh"
@@ -230,6 +232,24 @@ for B in /bin/bash /opt/homebrew/bin/bash; do
     err "dependency-guard.test.sh falla con bash $("$B" -c 'echo $BASH_VERSION'): $(echo "$salida" | tail -1)"
   fi
   rm -rf "$d"
+done
+
+echo "10/10 goal.sh: ShellCheck y prueba en seco con claude falso en bash 3.2 y bash 5"
+GS="$CITY/scripts/goal.sh"; GT="$CITY/scripts/goal.test.sh"
+if command -v shellcheck >/dev/null 2>&1; then
+  shellcheck "$GS" "$GT" || err "ShellCheck no pasa limpio sobre goal.sh o goal.test.sh"
+else
+  err "falta shellcheck (brew install shellcheck)"
+fi
+for B in /bin/bash /opt/homebrew/bin/bash; do
+  if [ ! -x "$B" ]; then echo "  (sin $B en esta máquina: se salta la prueba en bash 5)"; continue; fi
+  "$B" -n "$GS" || err "goal.sh no compila con bash $("$B" -c 'echo $BASH_VERSION')"
+  if salida=$("$B" "$GT" 2>&1); then
+    echo "  $(echo "$salida" | tail -1)"
+  else
+    echo "$salida" | grep '^FALLA' | sed 's/^/  /'
+    err "goal.test.sh falla con bash $("$B" -c 'echo $BASH_VERSION')"
+  fi
 done
 
 if [ "$fail" -eq 0 ]; then echo "OK"; else echo "FALLÓ"; exit 1; fi

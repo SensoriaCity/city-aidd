@@ -41,6 +41,7 @@
         "url": { "type": "string", "format": "uri", "description": "URL base de la app en la instalación local, con el puerto de la instalación: localhost, 127.0.0.1, *.localhost o *.test que resuelve solo a 127.0.0.1. El evaluador la confirma con scripts/entorno-qa.py antes de tocar nada." },
         "instalar": { "type": "string", "minLength": 1, "description": "Comando que levanta la instalación desde cero, con sus variables de entorno." },
         "smoke": { "type": "string", "minLength": 1, "description": "Comando que verifica la instalación antes de que el evaluador empiece." },
+        "bajar": { "type": "string", "minLength": 1, "description": "Opcional. Comando que baja la instalación y sus volúmenes desde la raíz del worktree. goal.sh lo corre al terminar cada id; sin él, docker compose --profile onprem down -v --remove-orphans." },
         "puerto": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Puerto HTTP de la instalación, cuando difiere del de producción (Herd ocupa 80 y 443)." },
         "usuario": { "type": "string", "minLength": 1, "description": "Opcional. Comando que crea el usuario de prueba en la instalación leyendo sus datos de la entrada estándar, una línea por elemento de usuario_stdin. build lo corre después de instalar y le pasa al evaluador correo y contraseña." },
         "usuario_stdin": {
