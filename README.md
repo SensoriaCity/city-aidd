@@ -22,14 +22,14 @@ Kit para probar en `city` una forma liviana de desarrollar con Claude Code, al l
 Instalación para un dev del piloto, desde su clon de `city`:
 
 ```bash
-claude plugin marketplace add SensoriaCity/aidd-lite
+claude plugin marketplace add SensoriaCity/city-aidd
 claude plugin install aidd-lite@sensoria --scope local
 ```
 
 Para probarlo antes de publicar el repo, con la ruta local:
 
 ```bash
-claude plugin marketplace add ~/Projects/aidd-lite
+claude plugin marketplace add ~/Projects/city-aidd
 claude plugin install aidd-lite@sensoria --scope local
 ```
 

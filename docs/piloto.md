@@ -17,11 +17,11 @@ Seis semanas, una o dos squads, BMAD intacto en el resto del equipo. En la seman
 
 ## Semana 0: preparación
 
-1. **Publicar el kit.** Subir este repo como privado a `SensoriaCity/aidd-lite`.
+1. **Publicar el kit.** Subir este repo como privado a `SensoriaCity/city-aidd`.
 2. **Instalar en cada dev del piloto,** desde su clon de `city`:
    ```bash
    claude update
-   claude plugin marketplace add SensoriaCity/aidd-lite
+   claude plugin marketplace add SensoriaCity/city-aidd
    claude plugin install aidd-lite@sensoria --scope local
    ```
    El scope local deja el plugin activo solo para ese dev y solo en ese repo; la configuración queda en `.claude/settings.local.json`. Confirmar que ese archivo está en el `.gitignore` de `city` y escribir `/aidd-lite:` en una sesión para ver las tres skills.
@@ -95,7 +95,7 @@ Resultados posibles:
 Cada fase se decide al cerrar la anterior.
 
 1. **Ampliación.** La mitad de las squads, con el mismo esquema de scope local. BMAD sigue para el resto.
-2. **Por defecto,** con 12 semanas de datos. El plugin se activa para todo el repo con `claude plugin marketplace add SensoriaCity/aidd-lite --scope project` y `claude plugin install aidd-lite@sensoria --scope project`, que escriben la configuración en `.claude/settings.json` de `city`. Se agrega protección de rama en `main` con una aprobación obligatoria. BMAD queda para quien lo pida con motivo.
+2. **Por defecto,** con 12 semanas de datos. El plugin se activa para todo el repo con `claude plugin marketplace add SensoriaCity/city-aidd --scope project` y `claude plugin install aidd-lite@sensoria --scope project`, que escriben la configuración en `.claude/settings.json` de `city`. Se agrega protección de rama en `main` con una aprobación obligatoria. BMAD queda para quien lo pida con motivo.
 3. **Retiro de BMAD.** Tras un ciclo completo sin PRs `bmad`, un PR aparte archiva `_bmad/` y los comandos BMAD de `.claude/commands/`.
 
 ## Guía de la retro de cierre

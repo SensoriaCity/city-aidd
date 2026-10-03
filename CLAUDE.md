@@ -30,5 +30,5 @@ Corre `claude plugin validate --strict` sobre el marketplace, el plugin y sus sk
 Para probar un cambio en `city` sin instalar, desde el clon de `city`:
 
 ```bash
-claude --plugin-dir ~/Projects/aidd-lite/plugins/aidd-lite
+claude --plugin-dir ~/Projects/city-aidd/plugins/aidd-lite
 ```
