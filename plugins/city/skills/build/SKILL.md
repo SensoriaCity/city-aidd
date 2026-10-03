@@ -61,9 +61,10 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
     - Usuario de prueba, si `.city.json` trae `qa.usuario`: en un solo comando de Bash, sin escribir nada a disco, genera correo `qa+<fecha y hora>@city.localhost`, nombre `QA` y contraseña aleatoria de 20 caracteres, y crea el usuario pasando por la entrada estándar una línea por elemento de `qa.usuario_stdin`, en su orden:
       `c="qa+$(date +%Y%m%d%H%M%S)@city.localhost"; p="$(openssl rand -base64 15)"; printf '%s\n' <"$c" por correo, QA por nombre, "$p" por contraseña> | <qa.usuario> && printf '%s %s\n' "$c" "$p"`
       Si falla, dilo y detente. La contraseña no va a ningún archivo, commit, PR ni evidencia: vive solo en esta instalación desechable.
-    - Delega al subagente `city:evaluador` con una sola línea, con `<url>` igual a `qa.url` con el puerto de la instalación (`qa.puerto` si lo trae):
-      `<id> · url: <url> · usuario: <correo> · contraseña: <contraseña>`; sin `qa.usuario`, solo `<id> · url: <url>`.
-    - Si responde `BLOQUEADO: …`, no guardes nada: dilo y detente.
+    - Delega al subagente `city:evaluador` con una sola línea, con `<url>` igual a `qa.url` con el puerto de la instalación (`qa.puerto` si lo trae) y `<clon>` la ruta absoluta del clon donde corrió `qa.instalar`:
+      `<id> · url: <url> · usuario: <correo> · contraseña: <contraseña> · repo: <clon> · instalacion: desechable`
+      Sin `qa.usuario`, quita usuario y contraseña. `· instalacion: desechable` va solo si esta sesión creó la instalación en ese clon y la va a bajar con `down -v`; si no, quítala y el evaluador no ejecuta pasos destructivos.
+    - Si responde `BLOQUEADO: …`, no pudo empezar (URL, usuario, entorno): no guardes nada, dilo y detente. Un paso bloqueado llega como `VEREDICTO: no pasa` con el motivo en la tabla.
     - Si no, guarda su respuesta tal cual, sin agregar ni quitar una línea, en `<evidencia_dir>/<id>.md` (crea la carpeta si falta).
     - Si su última línea es `VEREDICTO: pasa`, corre `bash "${CLAUDE_PLUGIN_ROOT}/scripts/passes.sh" <id>`. Si sale con 1, detente y pega su mensaje. Comitea la evidencia y el cambio de `features` juntos (`test(<ámbito>): evidencia de <id>`); con `no pasa`, comitea solo la evidencia.
     - Si no pasa, corrige, haz commit y pide otra pasada: máximo 2. Si las correcciones cambian más que unas líneas, pide también otra vuelta al revisor.

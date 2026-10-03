@@ -2,6 +2,9 @@
 
 Una línea por cambio de comportamiento del kit. Durante el piloto, máximo uno por semana.
 
+## city 1.0.2 · 2026-10-03
+- Evaluador sobre el clon e instalación desechable: `build` le pasa `repo` (ruta del clon) e `instalacion: desechable` cuando la instalación es suya y la baja con `down -v`; el evaluador lee código y corre comandos en el clon y toma de ahí el hash de la evidencia; solo con la marca ejecuta pasos que borran o alteran filas, nunca `migrate:fresh` ni borra volúmenes; un paso bloqueado termina en `VEREDICTO: no pasa` y `BLOQUEADO` queda para cuando no pudo empezar. Motivo: calibración del evaluador (trabajaba sobre el worktree de la sesión y no sobre el clon; el paso 3 de S3-02 quedó en `BLOQUEADO` sin veredicto). Sin entrada en `piloto/bitacora.md`: corrección de 1.0.1, no tropiezo del piloto.
+
 ## city 1.0.1 · 2026-10-03
 - Host de QA y usuario de prueba: el ejemplo de city-v2 apunta a `app.city.localhost` (`CITY_BASE_DOMAIN`); `.city.json` acepta `qa.usuario` y `qa.usuario_stdin`; `build` crea un usuario desechable con contraseña aleatoria y se lo pasa al evaluador, que entra por el login de la app y nunca lo copia a la evidencia. Motivo: el evaluador no tenía cómo entrar a los pasos con sesión y la URL del ejemplo no era el host de la app. Sin entrada en `piloto/bitacora.md`: corrección de 1.0.0, no tropiezo del piloto.
 

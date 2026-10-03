@@ -97,8 +97,11 @@ corte por corte usa los dos a mano y obtiene lo mismo.
   termina en "listo para merge" o "no mergear". Máximo dos vueltas; a la
   tercera, el PR nace bloqueado y lo decide una persona.
 - **`evaluador`.** Contexto limpio, sin edición, sin `browser_evaluate` ni
-  `browser_run_code_unsafe`. Recibe el id y la URL de una instalación local
-  limpia (`entorno-qa.py` lo confirma). Ejecuta cada paso como un usuario:
+  `browser_run_code_unsafe`. Recibe el id, la URL de una instalación local
+  limpia (`entorno-qa.py` lo confirma) y la ruta del clon donde corre, sobre
+  el que lee código y corre comandos. Solo si la instalación es desechable
+  (`instalacion: desechable`) ejecuta pasos que borran o alteran filas;
+  nunca reinicia la base ni borra volúmenes. Ejecuta cada paso como un usuario:
   UI con Playwright, API con curl, infra con curl, bash y `qa.smoke`;
   umbral duro por paso: uno falla, no pasa. Calibrado con tres ejemplos de "esto no pasa"
   (acción sin efecto visible, dato que no sobrevive a recargar, error en
