@@ -1,0 +1,56 @@
+{
+  "app": "city-v2",
+  "tests": {
+    "unit": [
+      "bash bin/city.test.sh",
+      "cd api && vendor/bin/pest",
+      "corepack pnpm -C web test"
+    ],
+    "navegador": [
+      "corepack pnpm -C web e2e"
+    ],
+    "lint": [
+      "cd api && vendor/bin/pint --test",
+      "corepack pnpm -C web lint"
+    ],
+    "estatico": [
+      "corepack pnpm -C web build"
+    ],
+    "audit": [
+      "cd api && composer audit",
+      "corepack pnpm -C web audit --audit-level high"
+    ]
+  },
+  "tope_lineas": 400,
+  "qa": {
+    "url": "http://app.localhost:8080",
+    "instalar": "CITY_HTTP_PORT=8080 bin/city install --lab",
+    "smoke": "bin/city smoke",
+    "puerto": 8080
+  },
+  "features": "docs/lab/features.json",
+  "evidencia_dir": "docs/lab/evidencia",
+  "adr_dir": "docs/adr",
+  "ramas": "feat/",
+  "label": "city",
+  "codeowners_paths": [
+    ".claude/**",
+    ".github/**",
+    "Dockerfile",
+    ".dockerignore",
+    "docker/**",
+    "docker-compose.yml",
+    "docker-compose.tls.yml",
+    ".trivyignore.yaml",
+    "bin/city",
+    "docs/adr/**",
+    "api/composer.json",
+    "api/composer.lock",
+    "web/package.json",
+    "web/pnpm-lock.yaml",
+    "web/pnpm-workspace.yaml",
+    "web/packages/*/package.json",
+    "web/apps/*/package.json",
+    ".city.json"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/SensoriaCity/aidd-lite/plugins/city/city.schema.json",
+  "title": ".city.json",
+  "description": "Contrato entre el plugin city y cada repo. El kit no sabe nada del stack: todo lo que ejecuta o lee sale de aquí. Va en la raíz del repo.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["app", "tests", "tope_lineas", "qa", "features", "evidencia_dir", "adr_dir", "ramas", "label", "codeowners_paths"],
+  "properties": {
+    "app": {
+      "type": "string",
+      "description": "Nombre corto del repo; va en las ramas y en los reportes. Ejemplo: city, city-v2.",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "tests": {
+      "type": "object",
+      "description": "Comandos que corren build, revisor y evaluador, desde la raíz del repo. Cada uno es una lista: un comando por paquete o superficie. La lista vacía significa que el repo no tiene ese tipo de prueba.",
+      "additionalProperties": false,
+      "required": ["unit", "navegador", "lint", "estatico", "audit"],
+      "properties": {
+        "unit": { "$ref": "#/$defs/comandos", "description": "Pruebas unitarias e integración (Pest, Vitest, bash)." },
+        "navegador": { "$ref": "#/$defs/comandos", "description": "Pruebas de punta a punta en navegador (Playwright). Vacío si el evaluador es la única prueba de navegador." },
+        "lint": { "$ref": "#/$defs/comandos", "description": "Formato y lint (Pint, ESLint, ShellCheck)." },
+        "estatico": { "$ref": "#/$defs/comandos", "description": "Análisis estático y tipos (Semgrep, tsc, PHPStan)." },
+        "audit": { "$ref": "#/$defs/comandos", "description": "Auditoría de dependencias (composer audit, pnpm audit)." }
+      }
+    },
+    "tope_lineas": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Tamaño máximo del diff de un corte, en líneas. scripts/tamano.sh lo lee; build, ship y revisor lo aplican."
+    },
+    "qa": {
+      "type": "object",
+      "description": "Instalación local limpia donde el evaluador prueba como usuario.",
+      "additionalProperties": false,
+      "required": ["url", "instalar", "smoke"],
+      "properties": {
+        "url": { "type": "string", "format": "uri", "description": "URL base de la app en la instalación local. entorno-qa.php la confirma local antes de tocar la base." },
+        "instalar": { "type": "string", "minLength": 1, "description": "Comando que levanta la instalación desde cero, con sus variables de entorno." },
+        "smoke": { "type": "string", "minLength": 1, "description": "Comando que verifica la instalación antes de que el evaluador empiece." },
+        "puerto": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Puerto HTTP de la instalación, cuando difiere del de producción (Herd ocupa 80 y 443)." }
+      }
+    },
+    "features": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Ruta al archivo de funcionalidades con pasos verificables y passes. Solo el evaluador escribe passes."
+    },
+    "evidencia_dir": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Carpeta donde el evaluador deja capturas y reportes por funcionalidad."
+    },
+    "adr_dir": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Carpeta de los ADR. necesita-adr.php y /city:adr escriben aquí."
+    },
+    "ramas": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+/$",
+      "description": "Prefijo de las ramas que abre build, con barra final. El token de gh solo puede hacer push a este prefijo."
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Label que ship pone en cada PR; firma del flujo para aidd-metrics."
+    },
+    "codeowners_paths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Patrones de CODEOWNERS que retienen el PR para lectura humana. ship avisa cuando el diff toca uno; /city:goal para si hay más de tres PR retenidos."
+    }
+  },
+  "$defs": {
+    "comandos": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

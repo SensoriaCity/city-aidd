@@ -10,6 +10,11 @@
       "name": "aidd-lite",
       "source": "./plugins/aidd-lite",
       "description": "Método liviano de desarrollo asistido por IA: spec de una página, cortes de ≤400 líneas directo a main, revisor en contexto limpio y revisión humana obligatoria. Convive con BMAD."
+    },
+    {
+      "name": "city",
+      "source": "./plugins/city",
+      "description": "Flujo de desarrollo con agentes para city y city-v2: spec, build, ship, goal, check, retro y adr. Evaluador independiente, auto-merge por checks y .city.json por repo. Reemplaza a aidd-lite."
     }
   ]
 }
