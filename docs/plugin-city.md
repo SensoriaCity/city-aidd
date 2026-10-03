@@ -103,9 +103,15 @@ corte por corte usa los dos a mano y obtiene lo mismo.
   (`instalacion: desechable`) ejecuta pasos que borran o alteran filas;
   nunca reinicia la base ni borra volúmenes. Ejecuta cada paso como un usuario:
   UI con Playwright, API con curl, infra con curl, bash y `qa.smoke`;
-  umbral duro por paso: uno falla, no pasa. Calibrado con tres ejemplos de "esto no pasa"
+  umbral duro por paso: uno falla, no pasa. Una cláusula "con su prueba en
+  <grupo o suite>" la verifica corriendo esa prueba en el clon con `tests`
+  (y `tests.postgres` si necesita base desechable), nunca leyendo CI; si no
+  puede correrla, el paso queda `no verificado` y no cumple. Lo que ve fuera
+  de la funcionalidad va en "Fuera de alcance", media como máximo, sin
+  cambiar el veredicto. Calibrado con tres ejemplos de "esto no pasa"
   (acción sin efecto visible, dato que no sobrevive a recargar, error en
-  consola o 500). No escribe nada: `/city:build` guarda su salida en
+  consola o 500). Solo escribe guiones y logs en un `mktemp -d` propio que
+  borra al terminar: `/city:build` guarda su salida en
   `<evidencia_dir>/<id>.md` y, si termina en `VEREDICTO: pasa`, corre
   `passes.sh`, el único camino a `passes`.
 - **`seguridad`.** Solo cuando el diff toca auth, permisos, archivos,

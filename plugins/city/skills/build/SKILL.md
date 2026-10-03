@@ -61,6 +61,7 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
     - Usuario de prueba, si `.city.json` trae `qa.usuario`: en un solo comando de Bash, sin escribir nada a disco, genera correo `qa+<fecha y hora>@city.localhost`, nombre `QA` y contraseña aleatoria de 20 caracteres, y crea el usuario pasando por la entrada estándar una línea por elemento de `qa.usuario_stdin`, en su orden:
       `c="qa+$(date +%Y%m%d%H%M%S)@city.localhost"; p="$(openssl rand -base64 15)"; printf '%s\n' <"$c" por correo, QA por nombre, "$p" por contraseña> | <qa.usuario> && printf '%s %s\n' "$c" "$p"`
       Si falla, dilo y detente. La contraseña no va a ningún archivo, commit, PR ni evidencia: vive solo en esta instalación desechable.
+    - Si el clon no trae `.city.json` en su raíz, copia el del worktree a `<clon>/.city.json` antes de delegar: el evaluador lo lee de ahí.
     - Delega al subagente `city:evaluador` con una sola línea, con `<url>` igual a `qa.url` con el puerto de la instalación (`qa.puerto` si lo trae) y `<clon>` la ruta absoluta del clon donde corrió `qa.instalar`:
       `<id> · url: <url> · usuario: <correo> · contraseña: <contraseña> · repo: <clon> · instalacion: desechable`
       Sin `qa.usuario`, quita usuario y contraseña. `· instalacion: desechable` va solo si esta sesión creó la instalación en ese clon y la va a bajar con `down -v`; si no, quítala y el evaluador no ejecuta pasos destructivos.

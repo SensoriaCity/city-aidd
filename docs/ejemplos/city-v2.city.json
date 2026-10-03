@@ -19,7 +19,8 @@
     "audit": [
       "cd api && composer audit",
       "corepack pnpm -C web audit --audit-level high"
-    ]
+    ],
+    "postgres": "bash bin/pest-postgres.sh"
   },
   "tope_lineas": 400,
   "qa": {

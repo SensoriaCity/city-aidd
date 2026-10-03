@@ -22,7 +22,8 @@
         "navegador": { "$ref": "#/$defs/comandos", "description": "Pruebas de punta a punta en navegador (Playwright). Vacío si el evaluador es la única prueba de navegador." },
         "lint": { "$ref": "#/$defs/comandos", "description": "Formato y lint (Pint, ESLint, ShellCheck)." },
         "estatico": { "$ref": "#/$defs/comandos", "description": "Análisis estático y tipos (Semgrep, tsc, PHPStan)." },
-        "audit": { "$ref": "#/$defs/comandos", "description": "Auditoría de dependencias (composer audit, pnpm audit)." }
+        "audit": { "$ref": "#/$defs/comandos", "description": "Auditoría de dependencias (composer audit, pnpm audit)." },
+        "postgres": { "type": "string", "minLength": 1, "description": "Opcional. Receta para las pruebas que exigen una base desechable: un comando que levanta la base fuera de la instalación, migra, corre esas pruebas y borra la base. Recibe al final los argumentos del runner para acotar a una prueba (p. ej. --filter). El evaluador la usa para las cláusulas \"con su prueba en <grupo o suite>\" que la necesitan." }
       }
     },
     "tope_lineas": {

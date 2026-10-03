@@ -2,6 +2,9 @@
 
 Una línea por cambio de comportamiento del kit. Durante el piloto, máximo uno por semana.
 
+## city 1.0.3 · 2026-10-03
+- Evaluador con reglas uniformes de prueba y alcance: una cláusula "con su prueba en <grupo o suite>" se verifica corriendo esa prueba en el clon con el comando de `tests` (y la receta de `tests.postgres`, campo opcional nuevo, si necesita base desechable), nunca leyendo CI; si no puede correrla, el paso queda `no verificado` y no cumple. Lo que encuentra fuera de la funcionalidad va en "Fuera de alcance", media como máximo, sin cambiar el veredicto. Guiones y logs solo en un `mktemp -d` propio que borra al terminar, nunca en el clon ni en el worktree, y la evidencia dice si algo quedó. `build` copia `.city.json` del worktree al clon si falta. El ejemplo de city-v2 nombra `bin/pest-postgres.sh`. Motivo: calibración del evaluador (la misma cláusula se verificaba distinto según el paso, hallazgos ajenos a la funcionalidad cambiaban el veredicto y quedaban archivos en el repo). Sin entrada en `piloto/bitacora.md`: corrección de 1.0.2, no tropiezo del piloto.
+
 ## city 1.0.2 · 2026-10-03
 - Evaluador sobre el clon e instalación desechable: `build` le pasa `repo` (ruta del clon) e `instalacion: desechable` cuando la instalación es suya y la baja con `down -v`; el evaluador lee código y corre comandos en el clon y toma de ahí el hash de la evidencia; solo con la marca ejecuta pasos que borran o alteran filas, nunca `migrate:fresh` ni borra volúmenes; un paso bloqueado termina en `VEREDICTO: no pasa` y `BLOQUEADO` queda para cuando no pudo empezar. Motivo: calibración del evaluador (trabajaba sobre el worktree de la sesión y no sobre el clon; el paso 3 de S3-02 quedó en `BLOQUEADO` sin veredicto). Sin entrada en `piloto/bitacora.md`: corrección de 1.0.1, no tropiezo del piloto.
 
