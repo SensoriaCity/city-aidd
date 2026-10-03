@@ -92,7 +92,7 @@ jobs:
           plugin_marketplaces: https://x-access-token:${{ secrets.CITY_AIDD_TOKEN }}@github.com/SensoriaCity/city-aidd.git
           plugins: city@sensoria
           prompt: "/city:revisar ${{ github.event.pull_request.number }}"
-          claude_args: "--max-turns 30"
+          claude_args: '--max-turns 30 --allowedTools "Bash,Read,Grep,Glob,Write,Agent,Task"'
       - name: Veredicto en el resumen
         if: always() && hashFiles('veredicto.md') != ''
         run: cat veredicto.md >> "$GITHUB_STEP_SUMMARY"
@@ -103,7 +103,7 @@ jobs:
 - `CLAUDE_CODE_OAUTH_TOKEN` sale de `claude setup-token`; `CITY_AIDD_TOKEN` es un token de solo lectura de `SensoriaCity/city-aidd`. Ninguno da acceso a un entorno.
 - El job no recibe el cuerpo ni los comentarios del PR: la skill lee solo rama, base y título, y el revisor recibe una línea.
 - Si falta `veredicto.txt` (la sesión se cortó o llegó a `--max-turns`), el último paso falla y el PR no entra.
-- Las pruebas que corre el revisor necesitan las dependencias del repo en el runner; si no están, las reporta como "no corrido". Si el job corta por permisos de Bash, los comandos van en `claude_args` con `--allowedTools`.
+- Las pruebas que corre el revisor necesitan las dependencias del repo en el runner; si no están, las reporta como "no corrido". `--allowedTools` en `claude_args` les da a la skill y al revisor las herramientas que usan sin pedir permiso en CI; la skill además las acota en su `allowed-tools`.
 
 ## Las cuatro capas que sostienen el auto-merge
 

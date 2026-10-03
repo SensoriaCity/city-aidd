@@ -2,6 +2,7 @@
 name: revisar
 description: Revisa un PR por número con el subagente city:revisor, en GitHub Actions o a mano. Lee rama, base y título con gh, deduce el id de la funcionalidad desde la rama o el título (o `ninguna` si no lo traen), delega con una sola línea y deja la respuesta en veredicto.md y su veredicto en veredicto.txt. No edita archivos del repo.
 argument-hint: "<número de PR>"
+allowed-tools: Bash(git *), Bash(gh *), Read, Grep, Glob, Write, Agent, Task
 ---
 
 # /city:revisar

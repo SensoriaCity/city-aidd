@@ -2,6 +2,9 @@
 
 Una línea por cambio de comportamiento del kit. Durante la adopción, máximo uno por semana.
 
+## city 1.1.2 · 2026-10-03
+- Herramientas de `revisar` en CI: la skill declara `allowed-tools: Bash(git *), Bash(gh *), Read, Grep, Glob, Write, Agent, Task` y el workflow de "En CI" en `docs/metodo.md` pasa `--allowedTools "Bash,Read,Grep,Glob,Write,Agent,Task"` en `claude_args`. Motivo: sin permisos explícitos, la sesión de CI no tiene a quién pedirlos y no puede correr `git`, `gh`, delegar al `revisor` ni escribir `veredicto.md`. Sin entrada en `bitacora.md`: corrección de 1.1.1, no tropiezo.
+
 ## city 1.1.1 · 2026-10-03
 - `revisar` sin id de funcionalidad: si la rama y el título no traen id, ya no para; delega al `revisor` con `ninguna · rama · base`. Con id `ninguna`, el revisor no lee `features` y revisa solo reglas duras, seguridad, título como Conventional Commit y dependencias; la falta de id no es hallazgo y el veredicto sale de los hallazgos. Motivo: un PR con label `city` cuya rama o título no nombran funcionalidad quedaba en `no mergear` sin revisión. Sin entrada en `bitacora.md`: corrección de 1.1.0, no tropiezo.
 
