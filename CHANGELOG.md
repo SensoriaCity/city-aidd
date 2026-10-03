@@ -2,6 +2,9 @@
 
 Una línea por cambio de comportamiento del kit. Durante la adopción, máximo uno por semana.
 
+## city 1.1.4 · 2026-10-03
+- `check` recupera el arreglo que se quedó en 2f38031 sin llegar a `main`: para ver contenedores usa `docker compose ps` desde la raíz, nunca `docker compose ls`, que queda fuera del allow; y cada línea del reporte cabe en 100 columnas, tablas incluidas, con la acción o el ADR que no quepa en una segunda línea con sangría. Se agrega la entrada `city 1.0.0`, que tampoco había llegado. El chequeo de changelog por versión de `validar.sh` ya estaba en `main`. Motivo: recuperar el commit 2f38031, cuya rama se borró. Sin entrada en `bitacora.md`: corrección, no tropiezo.
+
 ## city 1.1.3 · 2026-10-03
 - `ship` acepta ramas con prefijo Conventional (`chore/`, `fix/`, `docs/`, `build/`, `ci/`, `refactor/`, `test/`) además de `ramas`; solo rechaza una rama sin prefijo reconocible. En esas ramas el id es `ninguna`: no hay evaluador ni cambio de `passes`, y el título es Conventional Commit con el tipo del prefijo. El servidor de Playwright escribe en `${TMPDIR:-/tmp}/city-playwright` y no en `.playwright-mcp/` del proyecto; el evaluador lo nombra en `Temporales:` y lo borra al terminar, y `validar.sh` falla si `--output-dir` falta o apunta al repo. Motivo: `ship` rechazaba los PR de mantenimiento y `.playwright-mcp/` quedó suelto en city-v2. Sin entrada en `bitacora.md`: corrección, no tropiezo.
 
@@ -23,6 +26,21 @@ Una línea por cambio de comportamiento del kit. Durante la adopción, máximo u
 
 ## city 1.0.1 · 2026-10-03
 - Host de QA y usuario de prueba: el ejemplo de city-v2 apunta a `app.city.localhost` (`CITY_BASE_DOMAIN`); `.city.json` acepta `qa.usuario` y `qa.usuario_stdin`; `build` crea un usuario desechable con contraseña aleatoria y se lo pasa al evaluador, que entra por el login de la app y nunca lo copia a la evidencia. Motivo: el evaluador no tenía cómo entrar a los pasos con sesión y la URL del ejemplo no era el host de la app. Sin entrada en `piloto/bitacora.md`: corrección de 1.0.0, no tropiezo del piloto.
+
+## city 1.0.0 · 2026-10-03
+Primera versión del plugin `city`, que reemplaza a aidd-lite (congelado en 0.2). Diseño en `docs/metodo.md`.
+- Skill `build`: una funcionalidad de `features` por sesión en rama `<ramas>AAAA-MM-DD-<id>`, prueba primero, tamaño, regla de ADR y veredictos del `revisor` y del `evaluador`.
+- Skill `ship`: PR con la plantilla y el label de `.city.json`, en auto-merge por squash; avisa si CODEOWNERS lo retiene.
+- Skill `check`: reporte de cierre de solo lectura para quien libera, desde `gh` y `git`, en 40 líneas de 100 columnas.
+- Agente `revisor`: contexto limpio, solo lee el diff y corre tests; termina en "listo para merge" o "no mergear".
+- Agente `evaluador`: prueba como usuario sobre una instalación local limpia, sin edición ni ejecución de código en el navegador; su salida es la evidencia.
+- Agente `seguridad`: checklist de seguridad sobre los archivos de auth, permisos, archivos, integraciones o CLI.
+- `scripts/tamano.sh`: el único comando de tamaño, contra `main` y con `tope_lineas`, sin lockfiles, `vendor` ni la evidencia.
+- `scripts/passes.sh`: único camino a `passes`; exige `<evidencia_dir>/<id>.md` con `VEREDICTO: pasa` y cambia una sola línea.
+- `scripts/entorno-qa.py`: confirma que la URL del evaluador es local (localhost, 127.0.0.1, `*.localhost` o `*.test` que resuelve solo a 127.0.0.1).
+- `scripts/dependency-guard.sh`: niega instalar dependencias desde la sesión, también dentro de Docker; con sus casos en `dependency-guard.test.sh`.
+- `hooks/hooks.json`: corre `dependency-guard.sh` antes de Bash y de cada edición.
+- `.city.json` y su esquema `city.schema.json`: el contrato entre el kit y cada repo; el kit no sabe nada del stack.
 
 ## 0.2.0 · 2026-09-30
 Antes de arrancar el piloto, así que entra junto.
