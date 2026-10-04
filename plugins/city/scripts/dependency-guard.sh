@@ -6,13 +6,14 @@
 # install`, `npm exec` e `npm init` de un paquete, todo comando que agregue,
 # actualice o quite dependencias (`add`, `update`, `remove`, `install` sin
 # `--frozen-lockfile`, `shadcn add`, `composer require`…) y escribir un
-# lockfile, desde Bash o con Edit, Write, MultiEdit y NotebookEdit, también
-# con `git apply` o `am`. Pregunta antes de cambiar la configuración de un
-# gestor, de escribir un manifiesto o un archivo de la política (también
-# `.claude/` y `.github/workflows/`), de un shell en un contenedor y de `docker
-# compose` o `php artisan` fuera de `allow`; en modo auto, `ask` no pregunta
-# (#124). Mira dentro de envoltorios (`corepack`, `sudo`, `env`…), `-C web`,
-# `sh -c`, `eval`, `$(…)`, backticks y `docker compose exec` o `run`; el texto
+# lockfile, desde Bash o con Edit, Write, MultiEdit y NotebookEdit. Pregunta
+# antes de cambiar la configuración de un gestor, de escribir un manifiesto o
+# un archivo de la política (también `.claude/` y `.github/workflows/`) y de
+# `php artisan` fuera de `allow`; en modo auto, `ask` no pregunta (#124).
+# `docker`, `git`, `curl` y `bin/city` nunca deciden por sí mismos: solo se
+# revisa el gestor que corran. Mira dentro de envoltorios (`corepack`, `sudo`,
+# `env`…), `-C web`, `sh -c`, `eval`, `$(…)`, backticks y `docker exec` o
+# `run` y `docker compose exec` o `run`; el texto
 # entre comillas simples, un comentario y el cuerpo de un heredoc que va a
 # `cat`, `git` o `gh` son solo texto. Lo que no alcanza a leer (una comilla
 # sin cerrar, un comando enorme) pregunta. No ve un script en disco, una
@@ -269,7 +270,7 @@ artisan() {
 
 # check <palabras…>: un comando simple, sin comillas.
 check() {
-  local w prev="" last="" sub="" cmd args=()
+  local w prev="" last="" sub="" cmd args=() optw=()
   calls=$((calls + 1))
   # Anidado sin fin (corepack corepack …), o sin tiempo: pregunta.
   if (( calls > 200 || SECONDS > 10 )); then flag 1 "comando demasiado anidado para revisarlo"; return 0; fi
@@ -280,8 +281,8 @@ check() {
       ">"*) writes "${w#>}" ;;
       "<"*|"") ;;
       *)
-        [[ "$w" == --*=* ]] && writes "${w#*=}"
-        [[ "$prev" == -o || "$prev" == --output || "$prev" == -O || "$prev" == --log-junit ]] && writes "$w"
+        [[ "$w" == --*=* ]] && optw[${#optw[@]}]="${w#*=}"
+        [[ "$prev" == -o || "$prev" == --output || "$prev" == -O || "$prev" == --log-junit ]] && optw[${#optw[@]}]="$w"
         args[${#args[@]}]="$w" ;;
     esac
     prev="$w"
@@ -332,6 +333,11 @@ check() {
   cmd="${cmd%%@*}"
   cmd="${cmd%%:*}" # composer:2 en docker run
   shift
+  # docker, git, curl y bin/city no son gestores: sus opciones no cuentan.
+  case "$cmd" in
+    docker|docker-compose|git|curl|city) ;;
+    *) if (( ${#optw[@]} > 0 )); then for w in "${optw[@]}"; do writes "$w"; done; fi ;;
+  esac
 
   # Escribir un manifiesto, un lockfile o la política por fuera de Edit.
   case "$cmd" in
@@ -360,65 +366,10 @@ check() {
       if [[ -n "$last" ]]; then for w in "$@"; do [[ "$w" == -* ]] || writes "$w"; done; fi ;;
     dd)
       for w in "$@"; do [[ "$w" == of=* ]] && writes "${w#of=}"; done ;;
-    tar|unzip|curl|wget)
-      # curl solo escribe con -o (arriba) o con -O, que usa el nombre de la URL.
-      if [[ "$cmd" == curl ]]; then
-        last=""
-        for w in "$@"; do [[ "$w" == --remote-name* || "$w" =~ ^-[A-Za-z]*O ]] && last=1; done
-        [[ -n "$last" ]] || return 0
-      fi
+    tar|unzip|wget)
       for w in "$@"; do
         if lockfile "$w"; then flag 2 "$cmd puede escribir ${w}, un lockfile"; else protected "$w" && flag 1 "$cmd puede escribir ${w}"; fi
       done ;;
-    git)
-      # Opciones globales antes del subcomando (git -C ../x checkout …).
-      while (( $# > 0 )) && [[ "$1" == -* ]]; do
-        case "$1" in -C|-c|--git-dir|--work-tree|--namespace|--exec-path) shift ;; esac
-        (( $# > 0 )) && shift
-      done
-      case "${1:-}" in
-        # Volver un archivo protegido a otra versión también lo edita.
-        rm|mv)
-          for w in "$@"; do lockfile "$w" && flag 2 "git $1 saca ${w}, un lockfile"; done ;;
-        restore|reset|stash)
-          # Solo --staged saca el archivo del índice sin tocarlo; -s es --source.
-          local st=0 wt=0
-          shopt -u nocasematch
-          for w in "$@"; do
-            [[ "$w" == --staged ]] && st=1
-            [[ "$w" == --worktree ]] && wt=1
-            if [[ "$w" =~ ^-[A-Za-z]+$ ]]; then [[ "$w" == *S* ]] && st=1; [[ "$w" == *W* ]] && wt=1; fi
-          done
-          shopt -s nocasematch
-          if [[ "$1" != restore || "$st" == 0 || "$wt" == 1 ]]; then
-            for w in "$@"; do
-              if lockfile "$w"; then flag 2 "git $1 cambia ${w}, un lockfile"; else protected "$w" && flag 1 "git $1 cambia ${w}"; fi
-            done
-          fi ;;
-        apply|am)
-          # El hook no ve qué archivos decide el parche, y puede ser un
-          # lockfile: solo pasan las opciones que no escriben.
-          sub="$1"; last=""
-          for w in "$@"; do
-            [[ "$w" == --check || "$w" == --stat || "$w" == --numstat || "$w" == --summary || "$w" == --show-current-patch* || "$w" == --abort || "$w" == --quit ]] && last=1
-            [[ "$w" == --apply ]] && { last=""; break; }
-          done
-          [[ -n "$last" ]] || flag 2 "git $sub escribe archivos que el parche decide, también un lockfile" ;;
-        checkout|switch)
-          sub="$1"; shift
-          for w in "$@"; do
-            if lockfile "$w"; then flag 2 "git $sub cambia ${w}, un lockfile"; else protected "$w" && flag 1 "git $sub cambia ${w}"; fi
-          done
-          # Una rama nueva desde otro punto trae su .claude/settings.json.
-          if [[ "${1:-}" == -b || "${1:-}" == -c || "${1:-}" == -B || "${1:-}" == -C ]]; then
-            shift 2 2>/dev/null || set --
-            for w in "$@"; do
-              [[ "$w" == -* ]] && continue
-              [[ "$w" != origin/main && "$w" != main ]] && flag 1 "git $sub crea la rama desde ${w}, que puede traer otra configuración"
-              break
-            done
-          fi ;;
-      esac ;;
   esac
 
   case "$cmd" in
@@ -550,9 +501,9 @@ check() {
           (( $# > 0 )) && shift
         done
         [[ "${1:-}" == container ]] && shift
+        # docker no decide: solo se revisa lo que corre en el contenedor.
         case "${1:-}" in
           exec)
-            flag 1 "docker exec abre un shell en un contenedor"
             shift
             while (( $# > 0 )) && [[ "$1" == -* ]]; do
               case "$1" in -e|--env|-u|--user|-w|--workdir|--env-file) shift ;; esac
@@ -561,8 +512,7 @@ check() {
             (( $# > 0 )) && shift
             check "$@"; return 0 ;;
           run)
-            # docker run no pregunta (las recetas de verificar lo usan), pero
-            # lo que corre en el contenedor sí se revisa, también --entrypoint.
+            # También --entrypoint.
             shift
             local entry=""
             while (( $# > 0 )) && [[ "$1" == -* ]]; do
@@ -591,12 +541,7 @@ check() {
       sub="${1:-}"
       (( $# > 0 )) && shift
       case "$sub" in
-        ps|logs|"") ;;
-        config)
-          for w in "$@"; do [[ "$w" == --quiet || "$w" == -q || "$w" == --services ]] && return 0; done
-          flag 1 "docker compose config muestra los valores de .env" ;;
         exec|run)
-          flag 1 "docker compose $sub corre un comando en un contenedor"
           local centry=""
           while (( $# > 0 )) && [[ "$1" == -* ]]; do
             case "$1" in
@@ -608,7 +553,6 @@ check() {
           done
           (( $# > 0 )) && shift # el servicio
           if [[ -n "$centry" ]]; then check "$centry" "$@"; else check "$@"; fi ;;
-        *) flag 1 "docker compose $sub está fuera de allow" ;;
       esac ;;
     artisan) artisan "$@" ;;
     php*)
