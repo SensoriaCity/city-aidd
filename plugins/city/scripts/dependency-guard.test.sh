@@ -210,7 +210,6 @@ expect deny 'npm rebuild'
 expect deny 'npm rb'
 expect deny 'awk -i inplace 1 web/pnpm-lock.yaml'
 expect deny 'yq -i .x web/pnpm-lock.yaml'
-expect ask 'php artisan migrate --force'
 expect nada 'composer validate --strict'
 expect nada 'composer install --no-scripts'
 expect nada 'composer dump-autoload'
@@ -254,16 +253,11 @@ expect nada 'git am --show-current-patch'
 
 # Lo de ask, también con alias, -C web, corepack pnpm, sh -c, eval, $(…) y
 # docker compose exec o run.
-expect ask 'php artisan tinker'
-expect ask 'php artisan migrate'
-expect ask '"$HOME/Library/Application Support/Herd/bin/php84" artisan migrate'
 expect ask "sed -i '' 's/1.0/2.0/' web/package.json"
 expect ask 'echo {} > api/composer.json'
 expect ask 'pnpm config set registry https://example.invalid/'
 expect ask 'npm pkg set scripts.x=y'
 expect ask 'composer config allow-plugins.x/y true'
-expect ask 'php -d memory_limit=-1 artisan migrate'
-expect ask 'PHP artisan migrate'
 expect ask "sed -i '' 's/a/b/' .claude/settings.json"
 expect ask 'echo "exit 0" > .claude/hooks/dependency-guard.sh'
 expect ask 'cp /tmp/x .github/workflows/ci.yml'
@@ -303,6 +297,17 @@ expect nada 'git restore api/composer.lock'
 expect nada 'git checkout -b x 9eb514d'
 expect nada 'git diff --output .claude/settings.json'
 expect deny 'docker compose --profile onprem exec app pnpm add zod'
+
+# php artisan tampoco decide, directo o en docker compose exec o run:
+# tinker y lo demás van por settings.json del repo. install:* sigue en deny.
+expect nada 'php artisan tinker'
+expect nada 'php artisan migrate --force'
+expect nada 'PHP artisan migrate'
+expect nada 'php -d memory_limit=-1 artisan migrate'
+expect nada '"$HOME/Library/Application Support/Herd/bin/php84" artisan migrate'
+expect nada 'docker compose exec app php artisan migrate'
+expect nada 'docker compose exec -T app php artisan tinker'
+expect nada 'docker compose run --rm app php artisan db:seed'
 
 # Lo que sigue a las reglas de settings.json sin pasar por el hook.
 expect nada 'corepack pnpm -C web install --frozen-lockfile'

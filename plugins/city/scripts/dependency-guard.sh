@@ -8,10 +8,10 @@
 # `--frozen-lockfile`, `shadcn add`, `composer require`…) y escribir un
 # lockfile, desde Bash o con Edit, Write, MultiEdit y NotebookEdit. Pregunta
 # antes de cambiar la configuración de un gestor, de escribir un manifiesto o
-# un archivo de la política (también `.claude/` y `.github/workflows/`) y de
-# `php artisan` fuera de `allow`; en modo auto, `ask` no pregunta (#124).
-# `docker`, `git`, `curl` y `bin/city` nunca deciden por sí mismos: solo se
-# revisa el gestor que corran. Mira dentro de envoltorios (`corepack`, `sudo`,
+# un archivo de la política (también `.claude/` y `.github/workflows/`); en
+# modo auto, `ask` no pregunta (#124). `docker`, `git`, `curl`, `bin/city` y
+# `php artisan` nunca deciden por sí mismos (`tinker` y lo demás de artisan
+# van por settings.json del repo): solo se revisa el gestor que corran. Mira dentro de envoltorios (`corepack`, `sudo`,
 # `env`…), `-C web`, `sh -c`, `eval`, `$(…)`, backticks y `docker exec` o
 # `run` y `docker compose exec` o `run`; el texto
 # entre comillas simples, un comentario y el cuerpo de un heredoc que va a
@@ -256,8 +256,9 @@ check_string() {
   done <<< "$tokens"
 }
 
-# artisan <argumentos>: fuera de allow pregunta; install:api e
-# install:broadcasting bajan paquetes de Composer y de npm (ADR-0026).
+# artisan <argumentos>: no decide, salvo install:api e install:broadcasting,
+# que bajan paquetes de Composer y de npm (ADR-0026). El resto va por
+# settings.json del repo.
 artisan() {
   local w
   for w in "$@"; do
@@ -265,7 +266,6 @@ artisan() {
     [[ "$w" == install:* ]] && { flag 2 "php artisan $w instala paquetes"; return 0; }
     break
   done
-  flag 1 "php artisan está fuera de allow"
 }
 
 # check <palabras…>: un comando simple, sin comillas.

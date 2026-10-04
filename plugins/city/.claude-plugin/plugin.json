@@ -1,7 +1,7 @@
 {
   "name": "city",
   "displayName": "City",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Flujo de desarrollo con agentes para city y city-v2: spec de una página, cortes de ≤400 líneas, evaluador independiente cuya evidencia es el único camino a passes, auto-merge por checks y bucle por objetivo. Cada repo lo configura con .city.json.",
   "author": {
     "name": "Sensoria City",

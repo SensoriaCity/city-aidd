@@ -2,6 +2,9 @@
 
 Una línea por cambio de comportamiento del kit. Durante la adopción, máximo uno por semana.
 
+## city 1.2.2 · 2026-10-04
+- `dependency-guard.sh` deja de preguntar por `php artisan <comando>`, directo o dentro de `docker compose exec` o `run`: `tinker` y lo demás de artisan los decide `settings.json` del repo. Solo `install:api` e `install:broadcasting`, que bajan paquetes, siguen en deny. `dependency-guard.test.sh` agrega los casos negativos. Motivo: en modo auto sin prompts el `ask` niega, y `docker compose exec app php artisan migrate` quedaba negado en las corridas de `goal.sh`. Sin entrada en `bitacora.md`: corrección de 1.2.1, no tropiezo.
+
 ## city 1.2.1 · 2026-10-04
 - `dependency-guard.sh` solo decide sobre gestores de paquetes y lockfiles: `docker`, `git`, `curl` y `bin/city` ya no preguntan ni rechazan por sí mismos (se van los `ask` de `docker compose` fuera de `allow`, `docker exec` y `docker compose config`, las reglas de `git apply`, `restore`, `checkout`, `rm` y `mv`, y `curl -o`/`-O`), pero lo que corren en `docker exec`, `docker run` y `docker compose exec` o `run` se sigue revisando. `dependency-guard.test.sh` agrega los casos negativos, empezando por `docker compose down -v`. Motivo: en modo auto sin prompts el `ask` niega, y el guard negó `docker compose down -v` (el `qa.bajar` por defecto) en una corrida de `goal.sh` en city-v2. Sin entrada en `bitacora.md`: corrección de 1.2.0, no tropiezo.
 
