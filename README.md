@@ -1,6 +1,6 @@
-# city-aidd
+# sensoria-plugins
 
-El plugin `city` de Claude Code: el flujo de desarrollo con agentes de Sensoria para `city` y `city-v2`. Cada repo le dice al kit cómo es su stack con un `.city.json` en la raíz.
+El marketplace `sensoria` con los plugins de Claude Code de Sensoria. Hoy trae uno, `city`: el flujo de desarrollo con agentes de Sensoria para `city` y `city-v2`. Cada repo le dice al kit cómo es su stack con un `.city.json` en la raíz.
 
 ## Qué trae
 
@@ -24,14 +24,14 @@ El plugin `city` de Claude Code: el flujo de desarrollo con agentes de Sensoria 
 Instalación para todo un repo, desde su clon:
 
 ```bash
-claude plugin marketplace add SensoriaCity/city-aidd --scope project
+claude plugin marketplace add SensoriaCity/sensoria-plugins --scope project
 claude plugin install city@sensoria --scope project
 ```
 
 Para probar un cambio del kit sin instalarlo, desde el clon del repo:
 
 ```bash
-claude --plugin-dir ~/Projects/city-aidd/plugins/city
+claude --plugin-dir ~/Projects/sensoria-plugins/plugins/city
 ```
 
 ## Estructura

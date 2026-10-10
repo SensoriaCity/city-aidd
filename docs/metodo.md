@@ -93,7 +93,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
-          plugin_marketplaces: https://x-access-token:${{ secrets.CITY_AIDD_TOKEN }}@github.com/SensoriaCity/city-aidd.git
+          plugin_marketplaces: https://x-access-token:${{ secrets.CITY_AIDD_TOKEN }}@github.com/SensoriaCity/sensoria-plugins.git
           plugins: city@sensoria
           prompt: "/city:revisar ${{ github.event.pull_request.number }}"
           claude_args: '--max-turns 30 --allowedTools "Bash,Read,Grep,Glob,Write,Agent,Task"'
@@ -104,7 +104,7 @@ jobs:
         run: grep -q "listo para merge" veredicto.txt
 ```
 
-- `CLAUDE_CODE_OAUTH_TOKEN` sale de `claude setup-token`; `CITY_AIDD_TOKEN` es un token de solo lectura de `SensoriaCity/city-aidd`. Ninguno da acceso a un entorno.
+- `CLAUDE_CODE_OAUTH_TOKEN` sale de `claude setup-token`; `CITY_AIDD_TOKEN` es un token de solo lectura de `SensoriaCity/sensoria-plugins` (el secreto conserva el nombre de cuando el repo se llamaba `city-aidd`). Ninguno da acceso a un entorno.
 - El job no recibe el cuerpo ni los comentarios del PR: la skill lee solo rama, base y título, y el revisor recibe una línea.
 - Si falta `veredicto.txt` (la sesión se cortó o llegó a `--max-turns`), el último paso falla y el PR no entra.
 - Las pruebas que corre el revisor necesitan las dependencias del repo en el runner; si no están, las reporta como "no corrido". `--allowedTools` en `claude_args` les da a la skill y al revisor las herramientas que usan sin pedir permiso en CI; la skill además las acota en su `allowed-tools`.

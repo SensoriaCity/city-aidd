@@ -24,7 +24,7 @@ No hay piloto comparativo: el método se adopta app por app. Primero `city-v2`, 
 
 1. **Instalar el plugin** para todo el repo, desde su clon:
    ```bash
-   claude plugin marketplace add SensoriaCity/city-aidd --scope project
+   claude plugin marketplace add SensoriaCity/sensoria-plugins --scope project
    claude plugin install city@sensoria --scope project
    ```
    Escribe la configuración en `.claude/settings.json` del repo, que retiene CODEOWNERS. En una sesión, `/city:` debe mostrar `spec`, `build`, `ship`, `check` y `goal`, y `/mcp` el servidor `plugin:city:playwright`.
@@ -66,7 +66,7 @@ Para retirarlo, en un PR del repo: borrar la skill del plan diario, cambiar la s
 gh pr list --repo SensoriaCity/<repo> --state merged --limit 1000 \
   --search "merged:>=<inicio>" \
   --json number,title,author,headRefName,baseRefName,labels,createdAt,mergedAt,additions,deletions,changedFiles,files,reviews,commits \
-  | python3 ~/Projects/city-aidd/scripts/numeros.py
+  | python3 ~/Projects/sensoria-plugins/scripts/numeros.py
 ```
 
 El script lee la firma (`ramas` y `label`) del `.city.json` del repo, clasifica con una versión simplificada del ADR-008 y da, por flujo: n, tamaño p50 y p85, lead time del primer commit al merge, % sin revisión humana, primera revisión humana p50 y % de aprobación rápida. Con `--autores usuario1,usuario2` filtra por los autores de una squad. En el flujo `city` el % sin revisión humana es alto a propósito: lo que importa ahí son los guardarraíles de abajo.
