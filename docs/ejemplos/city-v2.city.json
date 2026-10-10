@@ -33,6 +33,7 @@
     "usuario_stdin": ["correo", "correo", "nombre", "contraseña", "contraseña"]
   },
   "features": "docs/lab/features.json",
+  "specs_dir": "docs/specs",
   "evidencia_dir": "docs/lab/evidencia",
   "adr_dir": "docs/adr",
   "ramas": "feat/",

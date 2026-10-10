@@ -57,6 +57,11 @@
       "minLength": 1,
       "description": "Ruta al archivo de funcionalidades con pasos verificables y passes. passes solo cambia con scripts/passes.sh, que exige la evidencia del evaluador con VEREDICTO: pasa."
     },
+    "specs_dir": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opcional. Carpeta donde /city:spec escribe las specs de una página; sin él, docs/specs. Cada funcionalidad que sale de una spec lleva su ruta en la clave spec."
+    },
     "evidencia_dir": {
       "type": "string",
       "minLength": 1,
@@ -70,7 +75,7 @@
     "ramas": {
       "type": "string",
       "pattern": "^[a-z0-9-]+/$",
-      "description": "Prefijo de las ramas que abre build, con barra final. El token de gh solo puede hacer push a este prefijo."
+      "description": "Prefijo de las ramas que abre build, con barra final. El token de gh solo puede hacer push a este prefijo y a los Conventional que acepta ship (docs/ para las specs de /city:spec)."
     },
     "label": {
       "type": "string",

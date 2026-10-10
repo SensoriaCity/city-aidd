@@ -1,6 +1,6 @@
 ---
 name: build
-description: Construye UNA funcionalidad del archivo features de .city.json en su propia rama, con prueba primero, verificación con los comandos del repo, tamaño, regla de ADR, veredicto del subagente revisor y del subagente evaluador sobre una instalación limpia. passes solo cambia con scripts/passes.sh y la evidencia del evaluador. Úsala en una sesión nueva por funcionalidad.
+description: Construye UNA funcionalidad del archivo features de .city.json en su propia rama, con una compuerta de corte antes de escribir código, prueba primero, verificación con los comandos del repo, tamaño, regla de ADR, veredicto del subagente revisor y del subagente evaluador sobre una instalación limpia. passes solo cambia con scripts/passes.sh y la evidencia del evaluador. Úsala en una sesión nueva por funcionalidad.
 argument-hint: "<id de funcionalidad> [ruta del plan del día]"
 disable-model-invocation: true
 ---
@@ -34,28 +34,37 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
    - `git status` limpio, `git fetch origin` y `git log --oneline -15 origin/main`. En un worktree, `main` local puede estar atrás: manda `origin/main`.
    - `gh pr list --state open`: si un PR abierto ya trae este id en la rama o el título, sigue en esa rama si es tuya (sesión interrumpida: `git log --oneline origin/main..HEAD` y `git diff origin/main...HEAD`, y continúa desde lo que falta); si es de otra persona, detente.
    - Plan del día, si lo pasaron: léelo. Manda sobre esta skill en alcance, archivos que toca y lo que no se decide solo. Si nombra una dependencia nueva, detente en ese paso: la instala la persona.
-   - La funcionalidad, solo ella: `jq --arg id "<id>" '.[] | select(.id==$id)' <features>`. Si no existe o ya tiene `passes: true`, detente y dilo.
+   - La funcionalidad, solo ella: `jq --arg id "<id>" '.[] | select(.id==$id)' <features>`. Si no existe, ya tiene `passes: true` o trae `reemplazada_por`, detente y dilo (en el último caso, con los ids que la reemplazan).
+   - Su spec, si la funcionalidad trae `spec`: lee la sección `### <id>`. Como un plan, manda en alcance ("Toca"), en lo que no se decide solo y en las dependencias. Si plan y spec se contradicen, manda el plan; anótalo en "Decisiones del ejecutor".
 
-2. **Rama** `<ramas>AAAA-MM-DD-<id>` con la fecha de hoy, desde `origin/main`: `git switch -c <rama> origin/main`.
+2. **Compuerta de corte,** antes de crear la rama y sin escribir código. Un corte es un vertical slice que cabe en `tope_lineas` y que el evaluador prueba solo (`${CLAUDE_PLUGIN_ROOT}/skills/spec/cortes.md`). Detente si:
+   - la funcionalidad trae más de 5 pasos (menos de 2 no bloquea);
+   - un paso necesita código que no está en `origin/main` ni entra en este corte;
+   - ningún paso lo puede observar una persona, la API o el CLI: es un corte por capa. La excepción es el corte de contrato de la regla 5 de `cortes.md`, cuyos pasos pueden ser solo "con su prueba en <grupo o suite>";
+   - la estimación pasa el 75 % de `tope_lineas`. Usa la de la spec o la del plan; si no hay, estima leyendo los archivos que vas a tocar y las pruebas vecinas.
+   Al detenerte, escribe la partición en funcionalidades según `cortes.md` y termina con la línea `Bloqueo: no es un corte. <motivo>`. No edites `features`: la partición entra con `/city:spec partir <id>`.
+   Si retomas tu rama (paso 1), no repitas la compuerta: manda `tamano.sh` del paso 8. Si el plan del día parte la funcionalidad en entregas (así los escribía el plan diario del repo hasta el 2026-10-10), la compuerta mide solo la estimación de la entrega que te toca: no cuenta pasos, observabilidad ni dependencias.
 
-3. **Prueba primero.** Por cada paso de la funcionalidad, escribe la prueba que lo demuestra, junto al código e imitando las vecinas, con nombres en el idioma que pide el `CLAUDE.md` del repo. Córrela y confirma que falla por la razón correcta. Si un paso solo se comprueba como usuario, anótalo para el evaluador.
+3. **Rama** `<ramas>AAAA-MM-DD-<id>` con la fecha de hoy, desde `origin/main`: `git switch -c <rama> origin/main`.
 
-4. **Implementa lo mínimo** que hace pasar las pruebas. Busca el análogo en el repo antes de inventar estructura. Nada de stubs, `TODO` ni código para después; nada fuera de la funcionalidad: lo que veas va al final del reporte.
+4. **Prueba primero.** Por cada paso de la funcionalidad, escribe la prueba que lo demuestra, junto al código e imitando las vecinas, con nombres en el idioma que pide el `CLAUDE.md` del repo. Córrela y confirma que falla por la razón correcta. Si un paso solo se comprueba como usuario, anótalo para el evaluador.
 
-5. **Verifica** desde la raíz, uno por uno y literal, cada comando de `tests.unit`, `tests.lint`, `tests.estatico` y `tests.audit`, y los de `tests.navegador` si la funcionalidad tiene UI. Si un comando no existe en el repo (binario, script o paquete ausente), dilo en el reporte y sigue con los demás; no lo reemplaces por otro. Si el repo genera contratos o tipos de lo que cambiaste, regenéralos.
+5. **Implementa lo mínimo** que hace pasar las pruebas. Busca el análogo en el repo antes de inventar estructura. Nada de stubs, `TODO` ni código para después; nada fuera de la funcionalidad: lo que veas va al final del reporte.
 
-6. **Commits** en Conventional Commits en español (`feat(<ámbito>): …`), los que hagan falta en la rama.
+6. **Verifica** desde la raíz, uno por uno y literal, cada comando de `tests.unit`, `tests.lint`, `tests.estatico` y `tests.audit`, y los de `tests.navegador` si la funcionalidad tiene UI. Si un comando no existe en el repo (binario, script o paquete ausente), dilo en el reporte y sigue con los demás; no lo reemplaces por otro. Si el repo genera contratos o tipos de lo que cambiaste, regenéralos.
 
-7. **Tamaño:** `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tamano.sh"`. Si sale con 1 (pasa `tope_lineas`), detente y propón cómo partir la funcionalidad en entregas.
+7. **Commits** en Conventional Commits en español (`feat(<ámbito>): …`), los que hagan falta en la rama.
 
-8. **ADR, por regla y no por criterio.** Hace falta si el diff toca `adr_dir` o un contrato compartido: un archivo de `codeowners_paths`, o una interfaz, esquema o API que otro módulo o app usa (búscalo con grep), o lo que el `CLAUDE.md` del repo exige con ADR. Está cubierto si el ADR viene en el diff o ya está en `origin/main` (`git cat-file -e origin/main:<ruta>`). Si falta, detente: un ADR imprevisto parte la entrega. Propón una primera con solo el contrato, el ADR y sus pruebas.
+8. **Tamaño:** `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tamano.sh"`. Si sale con 1 (pasa `tope_lineas`), detente como en la compuerta: la partición y `Bloqueo: no es un corte. Pasa tope_lineas`.
 
-9. **Revisor.** Delega al subagente `city:revisor` con una sola línea, sin tu resumen:
+9. **ADR, por regla y no por criterio.** Hace falta si el diff toca `adr_dir` o un contrato compartido: un archivo de `codeowners_paths`, o una interfaz, esquema o API que otro módulo o app usa (búscalo con grep), o lo que el `CLAUDE.md` del repo exige con ADR. Está cubierto si el ADR viene en el diff o ya está en `origin/main` (`git cat-file -e origin/main:<ruta>`). Si falta, detente: un ADR imprevisto parte el corte. Propón un primer corte con solo el contrato, el ADR y sus pruebas.
+
+10. **Revisor.** Delega al subagente `city:revisor` con una sola línea, sin tu resumen:
    `<id> · <rama> · origin/main`
    No edites mientras corre. Corrige los hallazgos `bloquea`, haz commit y pide otra vuelta: máximo 2. Los `debería` y `sugerencia` no bloquean; guárdalos para el PR. Si tras 2 vueltas sigue en `Veredicto: no mergear`, no insistas: el PR nace bloqueado y lo decide una persona.
    Si el diff toca autenticación, permisos, archivos, integraciones o el CLI, delega también al subagente `city:seguridad` con la misma línea y, debajo, uno por línea, los archivos de `git diff --name-only origin/main...HEAD` que tocan esa superficie. Mismas reglas y vueltas.
 
-10. **Evaluador,** siempre: su evidencia es el único camino a `passes`.
+11. **Evaluador,** siempre: su evidencia es el único camino a `passes`.
     - Antes, ver `docs/harness/entorno.md` del repo. Si hay una instalación que no creó esta sesión, no la bajes ni borres datos: di qué encontraste y espera el sí de la persona.
     - Instalación limpia: corre `qa.instalar` y luego `qa.smoke`, literales y con timeout amplio. Si falla algo de la máquina (Docker apagado, puerto ocupado), dilo y detente; si falla por el código, arréglalo antes de seguir.
     - Usuario de prueba, si `.city.json` trae `qa.usuario`: en un solo comando de Bash, sin escribir nada a disco, genera correo `qa+<fecha y hora>@city.localhost`, nombre `QA` y contraseña aleatoria de 20 caracteres, y crea el usuario pasando por la entrada estándar una línea por elemento de `qa.usuario_stdin`, en su orden:
@@ -71,7 +80,7 @@ Lee `.city.json` en la raíz del repo (`git rev-parse --show-toplevel`). Si no e
     - Si no pasa, corrige, haz commit y pide otra pasada: máximo 2. Si las correcciones cambian más que unas líneas, pide también otra vuelta al revisor.
     - Al terminar, baja la instalación de esta sesión como dice `docs/harness/entorno.md` del repo.
 
-11. **Reporte** en 7 líneas:
+12. **Reporte** en 7 líneas:
     1. Funcionalidad: `<id>` · rama `<rama>`.
     2. Archivos tocados.
     3. Pruebas: comandos en verde, en rojo o ausentes del repo.
