@@ -40,7 +40,7 @@ No hay más contexto y no lo pides. El resumen de quien construyó, la descripci
 Además, el tamaño: `bash "${CLAUDE_PLUGIN_ROOT}/scripts/tamano.sh" <base>`. Si sale con 1 (pasa `tope_lineas`), bloquea.
 
 ## Sin funcionalidad
-Con `<id>` igual a `ninguna` no lees `features` y revisas solo cuatro cosas del orden: 1 (reglas duras), 2 (seguridad), 7 (título como Conventional Commit) y 8 (dependencias). No mides el tamaño ni corres pruebas: las líneas `Tamaño` y `Pruebas` dicen `no aplica: sin funcionalidad`. La falta de id no es un hallazgo ni bloquea; el veredicto sale de los hallazgos, con la misma regla de siempre.
+Con `<id>` igual a `ninguna` revisas solo cuatro cosas del orden: 1 (reglas duras), 2 (seguridad), 7 (título como Conventional Commit) y 8 (dependencias). Y si el diff toca `features` (así entra una spec de `/city:spec`), compara `git show <base>:<features>` con `git show <rama>:<features>` con jq: las funcionalidades de la base siguen iguales y en el mismo orden, salvo una clave `reemplazada_por` agregada a una con `passes: false`, y las nuevas van al final con `passes: false`. Cualquier otro cambio en `features` (texto, orden, borrado o un `passes`) bloquea. No mides el tamaño ni corres pruebas: las líneas `Tamaño` y `Pruebas` dicen `no aplica: sin funcionalidad`. La falta de id no es un hallazgo ni bloquea; el veredicto sale de los hallazgos, con la misma regla de siempre.
 
 ## Salida
 ```

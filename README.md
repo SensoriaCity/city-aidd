@@ -6,7 +6,8 @@ El plugin `city` de Claude Code: el flujo de desarrollo con agentes de Sensoria 
 
 | Skill o agente | Quién lo usa | Qué hace |
 |---|---|---|
-| `/city:build` | Cualquiera | Construye una funcionalidad en su rama: prueba primero, tamaño, ADR, revisor y evaluador sobre una instalación limpia. `passes` cambia solo con la evidencia del evaluador |
+| `/city:spec` | Cualquiera | Escribe la spec de una página de un hito y la parte en cortes verticales que caben en el tope; los agrega a `features` con `passes: false`. Con `partir <id>`, reemplaza una funcionalidad que no es un corte |
+| `/city:build` | Cualquiera | Construye una funcionalidad en su rama: compuerta de corte, prueba primero, tamaño, ADR, revisor y evaluador sobre una instalación limpia. `passes` cambia solo con la evidencia del evaluador |
 | `/city:ship` | Cualquiera | Abre el PR con la plantilla del repo y el label, y lo deja en auto-merge por squash |
 | `/city:check` | Quien libera | Reporte de cierre de solo lectura: mergeados, `passes` con evidencia, retenidos, PR en rojo, ADR y qué clickear |
 | `/city:revisar` | CI, o cualquiera a mano | Revisa un PR por número con el `revisor` y deja `veredicto.md` y `veredicto.txt` para el check de CI |
@@ -41,6 +42,7 @@ plugins/city/
   .claude-plugin/plugin.json        versión del kit
   .mcp.json                         servidor de Playwright, con versión fija, para el evaluador
   city.schema.json                  contrato de .city.json
+  skills/spec/                      SKILL.md + cortes.md (qué es un corte) + plantilla-spec.md
   skills/build/                     SKILL.md
   skills/ship/                      SKILL.md + plantilla-pr.md
   skills/check/                     SKILL.md + plantilla-cierre.md

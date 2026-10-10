@@ -7,12 +7,14 @@ Lo que buscamos atacar está medido en `aidd-metrics/docs/descubrimiento.md`. En
 ## El ciclo
 
 ```
-Cualquier persona con Claude, una sesión por funcionalidad                          Quien libera
-spec ─▶ /city:build ─────────────────────────────────▶ /city:ship ─▶ checks ─▶ /city:check ─▶ flag
-1 pág.  prueba primero · revisor · evaluador            PR, label,    CI +       10 min,       on
-= hito  en una instalación limpia → evidencia →        auto-merge    revisor +  reporte
-        passes.sh                                       por squash    evidencia  armado
+Cualquier persona con Claude, una sesión por funcionalidad                     Quien libera
+/city:spec ─▶ /city:build ───────────────────────────▶ /city:ship ─▶ checks ─▶ /city:check ─▶ flag
+1 pág. =      compuerta de corte · prueba primero ·     PR, label,    CI +       10 min,       on
+hito, en      revisor · evaluador en una instalación    auto-merge    revisor +  reporte
+cortes        limpia → evidencia → passes.sh            por squash    evidencia  armado
 ```
+
+`/city:goal` encadena `build` y `ship` por los cortes de una spec, en orden y sin persona.
 
 Un cambio que cabe en una frase se salta la spec: va directo a `/city:build` con su funcionalidad.
 
@@ -30,8 +32,8 @@ Fuera del desarrollo:
 
 ## Reglas
 
-1. **Spec de una página = hito.** La spec cabe en una página y es un hito en Hitos v2. Sus cortes son funcionalidades del archivo `features` de `.city.json`, cada una con pasos verificables y `passes: false`. Un cambio que cabe en una frase no lleva spec.
-2. **Cortes de ≤400 líneas.** Un corte es un vertical slice: un comportamiento que funciona de punta a punta, en un PR a `main` de máximo `tope_lineas` (400). Se mide solo con `scripts/tamano.sh`, sin lockfiles, `vendor/` ni la evidencia. No se corta por capas y no hay ramas de hito ni PR apilados.
+1. **Spec de una página = hito.** La escribe `/city:spec`: cabe en una página y es un hito en Hitos v2. Sus cortes son funcionalidades del archivo `features` de `.city.json`, cada una con pasos verificables y `passes: false`, y entran a `main` en un PR propio antes del primer corte. Un cambio que cabe en una frase no lleva spec.
+2. **Cortes verticales de ≤400 líneas.** Un corte es un vertical slice: un comportamiento que una persona, la API o el CLI pueden observar de punta a punta, que el evaluador prueba solo, con 2 a 5 pasos, en un PR a `main` de máximo `tope_lineas` (400). Se planea con una estimación de máximo el 75 % del tope. Un corte es una funcionalidad: no hay entregas dentro de un id. Una funcionalidad que no es un corte se reemplaza con `/city:spec partir <id>`, que la deja con `reemplazada_por` y agrega los cortes. No se corta por capas y no hay ramas de hito ni PR apilados. Las reglas y la calibración están en `plugins/city/skills/spec/cortes.md`; `/city:spec` las aplica al partir y `/city:build` las vuelve a aplicar en su compuerta, antes de escribir código. El tamaño real se mide solo con `scripts/tamano.sh`, sin lockfiles, `vendor/` ni la evidencia.
 3. **Lo incompleto va tras flag,** no en una rama larga. Un merge a `main` no despliega, pero la versión siguiente lo llevaría.
 4. **Prueba primero.** Cada paso tiene una prueba que falla sin el cambio, escrita antes de implementar. "Listo" es la salida de las pruebas a la vista, no una afirmación.
 5. **Quien construye no se califica.** El `revisor` lee el diff en contexto limpio; el `evaluador` prueba como usuario sobre una instalación limpia. Ninguno recibe el resumen de quien construyó, la descripción del PR ni sus comentarios.
@@ -46,13 +48,14 @@ Fuera del desarrollo:
 
 | Comando | Quién | Entrada | Qué deja |
 |---|---|---|---|
-| `/city:build` | Cualquiera | id de funcionalidad, y el plan del día si lo hay | Rama `<ramas>AAAA-MM-DD-<id>`: prueba primero, implementación, tamaño, ADR, veredictos del `revisor` (y de `seguridad` si aplica) y del `evaluador`. Guarda la evidencia y, si pasa, corre `passes.sh`. |
+| `/city:spec` | Cualquiera, con el PO si es una feature de usuario | objetivo en una frase, documento o URL del hito; o `partir <id>` | Rama `docs/AAAA-MM-DD-spec-<tema>` con la spec en `specs_dir` y sus cortes al final de `features`, cada uno con `spec` y `passes: false`. Revisa cada corte contra `cortes.md` antes de escribirlo. El PR lo abre `/city:ship`. |
+| `/city:build` | Cualquiera | id de funcionalidad, y el plan del día si lo hay | Rama `<ramas>AAAA-MM-DD-<id>`: compuerta de corte (para con `Bloqueo` si la funcionalidad no es un vertical slice que cabe), prueba primero, implementación, tamaño, ADR, veredictos del `revisor` (y de `seguridad` si aplica) y del `evaluador`. Guarda la evidencia y, si pasa, corre `passes.sh`. |
 | `/city:ship` | Cualquiera | nada | PR a `main` con la plantilla del repo, el `label` y `gh pr merge --auto --squash`. Si CODEOWNERS retiene, dice qué archivos y a quién. |
 | `/city:check` | Quien libera | `<id>`, `hoy` o `semana` | Reporte de solo lectura de 10 minutos: mergeados y versiones, `passes` con evidencia, retenidos, PR en rojo, ADR pendientes, smoke y qué clickear. |
 | `/city:revisar` | CI, o cualquiera a mano | número de PR | Delega al `revisor` con `id · rama · base` (id `ninguna` si la rama y el título no lo traen) y deja su respuesta en `veredicto.md` y el veredicto en `veredicto.txt`. Es la única skill que puede invocar el modelo, porque corre sin persona. |
 | `/city:goal` | Cualquiera, en una terminal | ids en orden, y `--plan`, `--max-sesiones`, `--max-bloqueos` | Da la línea para `scripts/goal.sh`, que corre sin persona y un id a la vez: worktree desde `origin/main`, `claude -p` con `/city:build` y `/city:ship` en auto mode, espera checks y merge, un reintento si un check falla. Para todo con `necesita ADR` o `Bloqueo` en build, dos ids seguidos sin merge, el tope de sesiones (12) o Docker apagado. Deja el log en `${TMPDIR:-/tmp}/city-goal/` y el resumen `goal.md` por stdout; el cierre es `/city:check`. |
 
-Diseñados y todavía sin construir, en este orden: `/city:spec` (spec de una página y funcionalidades), `/city:retro` (números y una pieza menos) y `/city:adr`. Hasta entonces, la spec y las funcionalidades se escriben con el plan del día del repo.
+Diseñados y todavía sin construir, en este orden: `/city:retro` (números y una pieza menos) y `/city:adr`. Hasta entonces, la retro y los ADR se hacen con lo que tenga el repo.
 
 ## Agentes
 
@@ -62,7 +65,7 @@ Diseñados y todavía sin construir, en este orden: `/city:spec` (spec de una p�
 
 ## `.city.json`
 
-El contrato entre el kit y cada repo está en `plugins/city/city.schema.json`; el de city-v2 sirve de ejemplo en `docs/ejemplos/city-v2.city.json`. De ahí salen los comandos de prueba (`tests`), la instalación del evaluador (`qa`), `features`, `evidencia_dir`, `adr_dir`, `ramas`, `label`, `codeowners_paths` y `tope_lineas`. Lo propio de cada máquina (puertos, versiones, cómo bajar una instalación) va en `docs/harness/entorno.md` del repo.
+El contrato entre el kit y cada repo está en `plugins/city/city.schema.json`; el de city-v2 sirve de ejemplo en `docs/ejemplos/city-v2.city.json`. De ahí salen los comandos de prueba (`tests`), la instalación del evaluador (`qa`), `features`, `specs_dir`, `evidencia_dir`, `adr_dir`, `ramas`, `label`, `codeowners_paths` y `tope_lineas`. Lo propio de cada máquina (puertos, versiones, cómo bajar una instalación) va en `docs/harness/entorno.md` del repo.
 
 ## En CI
 
@@ -110,7 +113,7 @@ jobs:
 
 1. **Sandbox de Claude Code.** Sistema de archivos: el worktree. Red: `github.com` y el registro de imágenes del repo. Sin registries de paquetes, instalar una dependencia es imposible por construcción; el agente la pide en un PR que CODEOWNERS retiene. Lo que era `ask` sobre archivos de política pasa a `deny`, porque en auto mode `ask` no pregunta.
 2. **Ruleset en `main`.** Checks requeridos: CI del repo, `revisor` y `evidencia`. Historial lineal, squash, sin push directo. CODEOWNERS con el TL de la app en `.claude/**`, `.github/**`, manifiestos, lockfiles, ADR y el núcleo compartido (`Shared/` en city, `app/Domain/Core` en city-v2).
-3. **Token acotado.** `gh` por sesión: push a las ramas de `ramas`, crear PR y habilitar auto-merge. Sin merge, sin admin, sin secretos. El despliegue lo hace CI en cada tag; ninguna credencial de un entorno entra a una sesión.
+3. **Token acotado.** `gh` por sesión: push a las ramas de `ramas` y a las Conventional que acepta `ship` (`docs/` para las specs), crear PR y habilitar auto-merge. Sin merge, sin admin, sin secretos. El despliegue lo hace CI en cada tag; ninguna credencial de un entorno entra a una sesión.
 4. **Flags.** Lo incompleto para el usuario va tras flag, y el flag lo enciende una persona después de `/city:check`.
 
 Límites conocidos: el clasificador de auto mode deja pasar un 17% de acciones peligrosas (dato de Anthropic) y el CLI de Docker habla con el daemon fuera del sandbox. Por eso el alcance es el repo y los entornos de prueba, nunca una instancia municipal.

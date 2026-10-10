@@ -27,8 +27,8 @@ No hay piloto comparativo: el método se adopta app por app. Primero `city-v2`, 
    claude plugin marketplace add SensoriaCity/city-aidd --scope project
    claude plugin install city@sensoria --scope project
    ```
-   Escribe la configuración en `.claude/settings.json` del repo, que retiene CODEOWNERS. En una sesión, `/city:` debe mostrar `build`, `ship` y `check`, y `/mcp` el servidor `plugin:city:playwright`.
-2. **`.city.json`** en la raíz, contra `plugins/city/city.schema.json`. Su `qa` levanta una instalación local limpia; sin ella no hay evaluador y sin evaluador no hay `passes`.
+   Escribe la configuración en `.claude/settings.json` del repo, que retiene CODEOWNERS. En una sesión, `/city:` debe mostrar `spec`, `build`, `ship`, `check` y `goal`, y `/mcp` el servidor `plugin:city:playwright`.
+2. **`.city.json`** en la raíz, contra `plugins/city/city.schema.json`. Su `qa` levanta una instalación local limpia; sin ella no hay evaluador y sin evaluador no hay `passes`. Si las specs no van en `docs/specs`, `specs_dir` dice dónde.
 3. **`docs/harness/entorno.md`** con lo propio de la máquina: puertos, versiones y cómo bajar una instalación.
 4. **Labels:** `gh label create city --description "Flujo city" --repo SensoriaCity/<repo>` y `gh label create adr --description "Trae un ADR" --repo SensoriaCity/<repo>`.
 5. **Ruleset en `main`** con los checks requeridos (CI del repo, `revisor`, `evidencia`), squash, historial lineal y sin push directo; CODEOWNERS con los patrones de `codeowners_paths`; auto-merge permitido.
@@ -36,7 +36,21 @@ No hay piloto comparativo: el método se adopta app por app. Primero `city-v2`, 
 7. **Sandbox y `deny`** en `.claude/settings.json`: sistema de archivos en el worktree, red a `github.com` y al registro de imágenes, y `deny` en los archivos de política.
 8. **Notion:** cada spec es un hito en Hitos v2 y cada corte una tarea en Tareas v2 ligada al hito, con la URL de su PR. Para medir cuánto tarda una tarea de En progreso a Finalizado, las dos automatizaciones de `programa-medicion.md` §10 (`Inicio` y `Fin`).
 9. **`aidd-metrics`:** aplicar `integracion-aidd-metrics.md` y registrar el evento de la squad.
-10. **Kickoff de 45 minutos** con la squad: leer `metodo.md` juntos y hacer en vivo una funcionalidad pequeña con UI, de `/city:build` a `/city:check`, para que vean al evaluador probar.
+10. **Kickoff de 45 minutos** con la squad: leer `metodo.md` juntos y hacer en vivo una spec pequeña con UI, de `/city:spec` a `/city:check`, para que vean cómo se parte en cortes y al evaluador probar.
+
+## Si el repo tenía un plan diario
+
+`/city:spec` reemplaza al plan diario del repo (en city-v2, `/plan-diario`). Lo que hacía se reparte así:
+
+| Lo que hacía el plan diario | Dónde queda |
+|---|---|
+| Agregar las funcionalidades del hito a `features` | `/city:spec`, partidas en cortes según `cortes.md`, en un PR propio |
+| "Toca", lo que no decide solo quien construye y las dependencias con su línea de instalación | La sección de cada corte en la spec, que `/city:build` lee |
+| Elegir de 1 a 3 funcionalidades para el día | `/city:goal <ids en orden>`, o `/city:build <id>` |
+| Revisar CI y tags de `main` y darle destino a los hallazgos | `/city:check` y la retro |
+| Lo propio del repo: estado, bitácora, guiones al teclado, rutas de worktree | El `CLAUDE.md` del repo o `docs/harness/entorno.md` |
+
+Para retirarlo, en un PR del repo: borrar la skill del plan diario, cambiar la sección de flujo del `CLAUDE.md` por el ciclo de `metodo.md` y, si las specs no van en `docs/specs`, agregar `specs_dir` a `.city.json`. Los planes ya escritos se quedan como historia y `/city:build <id> <plan>` los sigue leyendo; un plan que parte una funcionalidad en entregas vale hasta que esa funcionalidad cierre. Una funcionalidad grande que quedó a medias, sin plan para lo que falta, se parte con `/city:spec partir <id>`.
 
 ## Cada semana
 
