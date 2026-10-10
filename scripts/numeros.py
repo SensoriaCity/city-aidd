@@ -6,7 +6,7 @@ Uso (desde la raíz del repo medido, con gh autenticado):
   gh pr list --repo SensoriaCity/city --state merged --limit 1000 \
     --search "merged:>=2026-10-06" \
     --json number,title,author,headRefName,baseRefName,labels,createdAt,mergedAt,additions,deletions,changedFiles,files,reviews,commits \
-    | python3 ~/Projects/city-aidd/scripts/numeros.py [--config .city.json] [--autores usuario1,usuario2]
+    | python3 ~/Projects/sensoria-plugins/scripts/numeros.py [--config .city.json] [--autores usuario1,usuario2]
 
 La firma del flujo sale del .city.json del repo: un PR es `liviano` (el flujo city en el ADR-008) si su rama
 empieza por `ramas` o si tiene el `label`. Clasifica cada PR con una versión simplificada del ADR-008 de

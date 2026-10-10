@@ -1,6 +1,6 @@
-# city-aidd
+# sensoria-plugins
 
-Repo del plugin `city` de Claude Code en `plugins/city/`, su marketplace en `.claude-plugin/marketplace.json` y la documentación del método y de la adopción en `docs/`. El código que construyen las squads vive en `SensoriaCity/city` y `SensoriaCity/city-v2`, no aquí.
+Repo de los plugins de Claude Code de Sensoria. Hoy trae uno, `city`, en `plugins/city/`, con su marketplace en `.claude-plugin/marketplace.json` y la documentación del método y de la adopción en `docs/`. El código que construyen las squads vive en `SensoriaCity/city` y `SensoriaCity/city-v2`, no aquí.
 
 ## Reglas para cambiar el kit
 
@@ -31,5 +31,5 @@ Corre `claude plugin validate --strict` sobre el marketplace, el plugin y sus sk
 Para probar un cambio en un repo sin instalar, desde su clon:
 
 ```bash
-claude --plugin-dir ~/Projects/city-aidd/plugins/city
+claude --plugin-dir ~/Projects/sensoria-plugins/plugins/city
 ```

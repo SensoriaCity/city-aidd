@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/SensoriaCity/city-aidd/plugins/city/city.schema.json",
+  "$id": "https://github.com/SensoriaCity/sensoria-plugins/plugins/city/city.schema.json",
   "title": ".city.json",
   "description": "Contrato entre el plugin city y cada repo. El kit no sabe nada del stack: todo lo que ejecuta o lee sale de aquí. Va en la raíz del repo.",
   "type": "object",
